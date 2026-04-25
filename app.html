@@ -1448,7 +1448,7 @@
             }
             // Extra bottom for legend in line charts with multiple datasets
             if (type === 'line' && datasets.length > 1) {
-                padBottom += 22;
+                padBottom += 30;
             }
             var chartW = w - padLeft - padRight;
             var chartH = h - padTop - padBottom;
@@ -1640,7 +1640,7 @@
 
                 // Legend for line charts with multiple datasets - 居中显示
                 if (datasets.length > 1) {
-                    var legendY = padTop + chartH + 22;
+                    var legendY = padTop + chartH + 26;
                     ctx.font = '11px -apple-system, sans-serif';
                     ctx.textBaseline = 'middle';
                     // 先计算图例总宽度
@@ -1714,7 +1714,7 @@
 
                 // Legend for bar charts with multiple datasets
                 if (dsCount > 1) {
-                    var legendY = padTop + chartH + 22;
+                    var legendY = padTop + chartH + 26;
                     var legendX = padLeft;
                     ctx.font = '11px -apple-system, sans-serif';
                     ctx.textBaseline = 'middle';
