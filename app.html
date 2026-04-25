@@ -1140,16 +1140,8 @@
             </div>
             <form id="jaundiceForm">
                 <div class="form-group">
-                    <label class="form-label">测量时间</label>
-                    <div class="time-inputs">
-                        <div class="form-group">
-                            <input type="date" class="form-input" id="jaundiceDate" required>
-                        </div>
-                        <div class="time-separator">-</div>
-                        <div class="form-group">
-                            <input type="time" class="form-input" id="jaundiceTime" required>
-                        </div>
-                    </div>
+                    <label class="form-label">测量日期</label>
+                    <input type="date" class="form-input" id="jaundiceDate" required>
                 </div>
                 <div class="form-group">
                     <label class="form-label">黄疸值 (mg/dL)</label>
@@ -2191,18 +2183,14 @@
             if (!currentBaby) return;
 
             const date = document.getElementById('jaundiceDate').value;
-            const time = document.getElementById('jaundiceTime').value;
 
             const record = {
-                datetime: `${date}T${time}`,
+                datetime: date,
                 value: parseFloat(document.getElementById('jaundiceValue').value)
             };
 
             DataManager.saveRecord(currentBaby.id, 'jaundice', record);
             e.target.reset();
-            _activeInputs.delete(document.getElementById('jaundiceTime'));
-            document.getElementById('jaundiceDate').value = getTodayLocal();
-            document.getElementById('jaundiceTime').value = getNowTimeLocal();
             loadJaundiceData();
         });
 
@@ -2361,7 +2349,7 @@
                     <div class="record-item">
                         <div class="record-info">
                             <div class="record-value">${r.value} mg/dL <span style="color: ${status.color}">${status.text}</span></div>
-                            <div class="record-time">${formatDateTime(r.datetime)}</div>
+                            <div class="record-time">${formatDate(r.datetime)}</div>
                         </div>
                         <button class="delete-btn" onclick="deleteRecord('jaundice', ${r.id})">🗑️</button>
                     </div>
