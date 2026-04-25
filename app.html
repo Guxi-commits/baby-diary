@@ -1638,13 +1638,17 @@
                     });
                 });
 
-                // Legend for line charts with multiple datasets
+                // Legend for line charts with multiple datasets - 居中显示
                 if (datasets.length > 1) {
                     var legendY = padTop + chartH + 22;
-                    var legendX = padLeft;
                     ctx.font = '11px -apple-system, sans-serif';
                     ctx.textBaseline = 'middle';
-                    ctx.textAlign = 'left';
+                    // 先计算图例总宽度
+                    var totalLegendW = 0;
+                    datasets.forEach(function(ds) {
+                        totalLegendW += 20 + ctx.measureText(ds.label).width + 16;
+                    });
+                    var legendX = padLeft + (chartW - totalLegendW) / 2;
                     datasets.forEach(function(ds, di) {
                         ctx.strokeStyle = ds.color;
                         ctx.lineWidth = 3;
@@ -1658,6 +1662,7 @@
                         ctx.fill();
                         legendX += 20;
                         ctx.fillStyle = '#666';
+                        ctx.textAlign = 'left';
                         ctx.fillText(ds.label, legendX, legendY);
                         legendX += ctx.measureText(ds.label).width + 16;
                     });
