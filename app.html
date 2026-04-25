@@ -1594,22 +1594,31 @@
                     var pts = [];
                     for (var i = 0; i < ds.data.length; i++) {
                         var x = padLeft + (n === 1 ? chartW / 2 : (i / (n - 1)) * chartW);
-                        pts.push({ x: x, y: yPos(ds.data[i]) });
+                        // 限制 y 不低于基线（0值线），防止曲线画到负数区域
+                        var rawY = yPos(ds.data[i]);
+                        var baseY = yPos(Math.max(minVal, 0));
+                        var y = Math.min(rawY, baseY);
+                        pts.push({ x: x, y: y });
                     }
 
                     // Fill area
-                    var baseY = yPos(Math.max(minVal, 0));
                     ctx.beginPath();
-                    smoothPath(ctx, pts);
+                    ctx.moveTo(pts[0].x, pts[0].y);
+                    for (var i = 1; i < pts.length; i++) {
+                        ctx.lineTo(pts[i].x, pts[i].y);
+                    }
                     ctx.lineTo(pts[pts.length - 1].x, baseY);
                     ctx.lineTo(pts[0].x, baseY);
                     ctx.closePath();
                     ctx.fillStyle = colorAlpha(ds.color, 0.15);
                     ctx.fill();
 
-                    // Line
+                    // Line - 使用直线连接，避免贝塞尔曲线下凹到负数
                     ctx.beginPath();
-                    smoothPath(ctx, pts);
+                    ctx.moveTo(pts[0].x, pts[0].y);
+                    for (var i = 1; i < pts.length; i++) {
+                        ctx.lineTo(pts[i].x, pts[i].y);
+                    }
                     ctx.strokeStyle = ds.color;
                     ctx.lineWidth = 2.5;
                     ctx.lineJoin = 'round';
