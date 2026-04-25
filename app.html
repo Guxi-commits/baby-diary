@@ -1,0 +1,2913 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+    <meta name="theme-color" content="#FF9AA2">
+    <title>宝宝成长日记</title>
+    <!-- PWA 配置：让浏览器显示"添加到主屏幕" -->
+    <link rel="manifest" href="manifest.json">
+    <meta name="mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <meta name="apple-mobile-web-app-title" content="宝宝日记">
+    <link rel="apple-touch-icon" href="icon-192.png">
+    <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
+    <meta http-equiv="Pragma" content="no-cache">
+    <meta http-equiv="Expires" content="0">
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        :root {
+            --primary: #FF9AA2;
+            --primary-dark: #FF7A85;
+            --secondary: #B5EAD7;
+            --accent: #FFDAC1;
+            --purple: #C7CEEA;
+            --text: #4A4A4A;
+            --text-light: #888;
+            --bg: #FFF9F9;
+            --card-bg: #fff;
+            --danger: #FF6B6B;
+            --success: #51CF66;
+            --warning: #FFD43B;
+            --page-scale: 1;
+        }
+
+        html {
+            font-size: calc(16px * var(--page-scale));
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            background: var(--bg);
+            color: var(--text);
+            min-height: 100vh;
+            padding-bottom: 90px;
+            font-size: 1rem;
+        }
+
+        /* 头部 - 适配刘海屏 */
+        .header {
+            background: linear-gradient(135deg, var(--primary) 0%, var(--primary-dark) 100%);
+            color: white;
+            padding: 12px 15px;
+            padding-top: calc(12px + env(safe-area-inset-top));
+            position: sticky;
+            top: 0;
+            left: 0;
+            right: 0;
+            z-index: 100;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            min-height: calc(56px + env(safe-area-inset-top));
+        }
+
+        .header-left {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .header h1 {
+            font-size: 1.125rem;
+            font-weight: 600;
+            white-space: nowrap;
+            line-height: 1.3;
+        }
+
+        .header-right {
+            display: flex;
+            gap: 8px;
+            align-items: center;
+            flex-shrink: 0;
+        }
+
+        .baby-selector {
+            background: rgba(255,255,255,0.3);
+            border: none;
+            color: white;
+            padding: 6px 12px;
+            border-radius: 20px;
+            font-size: 0.875rem;
+            cursor: pointer;
+            white-space: nowrap;
+        }
+
+        .settings-btn {
+            background: rgba(255,255,255,0.3);
+            border: none;
+            color: white;
+            width: 34px;
+            height: 34px;
+            border-radius: 50%;
+            font-size: 1rem;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        /* 宝宝信息卡片 */
+        .baby-info-card {
+            background: var(--card-bg);
+            margin: 15px;
+            padding: 1.25rem;
+            border-radius: 1.25rem;
+            box-shadow: 0 4px 20px rgba(0,0,0,0.08);
+        }
+
+        .baby-basic {
+            display: flex;
+            align-items: center;
+            gap: 15px;
+            margin-bottom: 15px;
+        }
+
+        .baby-avatar {
+            width: 60px;
+            height: 60px;
+            border-radius: 50%;
+            background: linear-gradient(135deg, var(--secondary), var(--purple));
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 28px;
+            flex-shrink: 0;
+        }
+
+        .baby-details h2 {
+            font-size: 1.125rem;
+            margin-bottom: 5px;
+        }
+
+        .baby-meta {
+            font-size: 0.875rem;
+            color: var(--text-light);
+        }
+
+        .baby-stats {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 10px;
+            text-align: center;
+        }
+
+        .stat-item {
+            background: var(--bg);
+            padding: 12px;
+            border-radius: 12px;
+        }
+
+        .stat-value {
+            font-size: 1.125rem;
+            font-weight: 600;
+            color: var(--primary-dark);
+        }
+
+        .stat-label {
+            font-size: 0.8125rem;
+            color: var(--text-light);
+            margin-top: 4px;
+        }
+
+        /* 导航标签 */
+        .nav-tabs {
+            display: flex;
+            background: var(--card-bg);
+            margin: 0 15px 15px;
+            border-radius: 15px;
+            overflow-x: auto;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.05);
+            -webkit-overflow-scrolling: touch;
+        }
+
+        .nav-tab {
+            flex: 1;
+            min-width: 0;
+            padding: 14px 6px;
+            text-align: center;
+            font-size: 0.875rem;
+            cursor: pointer;
+            transition: all 0.3s;
+            border: none;
+            background: none;
+            color: var(--text-light);
+            white-space: nowrap;
+        }
+
+        .nav-tab.active {
+            background: var(--primary);
+            color: white;
+            font-weight: 600;
+        }
+
+        /* 内容区域 */
+        .content-section {
+            display: none;
+            padding: 0 15px;
+        }
+
+        .content-section.active {
+            display: block;
+        }
+
+        /* 卡片样式 */
+        .card {
+            background: var(--card-bg);
+            border-radius: 1.25rem;
+            padding: 1.25rem;
+            margin-bottom: 15px;
+            box-shadow: 0 2px 15px rgba(0,0,0,0.05);
+        }
+
+        .card-title {
+            font-size: 1.0625rem;
+            font-weight: 600;
+            margin-bottom: 15px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .card-title .icon {
+            width: 32px;
+            height: 32px;
+            border-radius: 10px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1rem;
+        }
+
+        /* 表单样式 */
+        .form-group {
+            margin-bottom: 15px;
+        }
+
+        .form-label {
+            display: block;
+            font-size: 0.9375rem;
+            margin-bottom: 8px;
+            color: var(--text);
+        }
+
+        .form-input, .form-select {
+            width: 100%;
+            padding: 12px 15px;
+            border: 2px solid #eee;
+            border-radius: 12px;
+            font-size: 1rem;
+            transition: border-color 0.3s;
+            color: var(--text);
+        }
+
+        .form-input:focus, .form-select:focus {
+            outline: none;
+            border-color: var(--primary);
+        }
+
+        .btn {
+            padding: 14px 24px;
+            border: none;
+            border-radius: 12px;
+            font-size: 1rem;
+            cursor: pointer;
+            transition: all 0.3s;
+            font-weight: 500;
+        }
+
+        .btn-primary {
+            background: var(--primary);
+            color: white;
+            width: 100%;
+        }
+
+        .btn-primary:active {
+            transform: scale(0.98);
+        }
+
+        .btn-danger {
+            background: var(--danger);
+            color: white;
+        }
+
+        .btn-success {
+            background: var(--success);
+            color: white;
+        }
+
+        /* 喂养计时器 */
+        .timer-container {
+            text-align: center;
+            padding: 30px;
+            background: linear-gradient(135deg, var(--accent), var(--secondary));
+            border-radius: 20px;
+            margin-bottom: 20px;
+        }
+
+        .timer-display {
+            font-size: 3.5rem;
+            font-weight: 700;
+            color: var(--text);
+            font-family: 'Courier New', monospace;
+            margin-bottom: 20px;
+        }
+
+        .timer-buttons {
+            display: flex;
+            gap: 15px;
+            justify-content: center;
+        }
+
+        .timer-btn {
+            width: 70px;
+            height: 70px;
+            border-radius: 50%;
+            border: none;
+            font-size: 28px;
+            cursor: pointer;
+            transition: all 0.3s;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .timer-btn.start {
+            background: var(--success);
+            color: white;
+        }
+
+        .timer-btn.stop {
+            background: var(--danger);
+            color: white;
+        }
+
+        .timer-btn:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+        }
+
+        /* 喂养类型选择 */
+        .feed-type-selector {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 15px;
+        }
+
+        .feed-type-btn {
+            flex: 1;
+            padding: 15px;
+            border: 2px solid #eee;
+            border-radius: 12px;
+            background: white;
+            cursor: pointer;
+            text-align: center;
+            transition: all 0.3s;
+        }
+
+        .feed-type-btn.active {
+            border-color: var(--primary);
+            background: rgba(255,154,162,0.1);
+        }
+
+        .feed-type-btn .emoji {
+            font-size: 24px;
+            display: block;
+            margin-bottom: 5px;
+        }
+
+        .feed-type-btn > div:last-child {
+            font-size: 0.9375rem;
+        }
+
+        /* 记录列表 */
+        .record-list {
+            max-height: 300px;
+            overflow-y: auto;
+        }
+
+        .record-item {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 12px;
+            border-bottom: 1px solid #f0f0f0;
+        }
+
+        .record-item:last-child {
+            border-bottom: none;
+        }
+
+        .record-info {
+            flex: 1;
+        }
+
+        .record-time {
+            font-size: 0.8125rem;
+            color: var(--text-light);
+        }
+
+        .record-value {
+            font-weight: 600;
+            color: var(--primary-dark);
+            font-size: 0.9375rem;
+        }
+
+        .delete-btn {
+            background: none;
+            border: none;
+            color: var(--danger);
+            font-size: 18px;
+            cursor: pointer;
+            padding: 5px 10px;
+        }
+
+        /* 疫苗清单 */
+        .vaccine-section {
+            margin-bottom: 20px;
+        }
+
+        .vaccine-section-title {
+            font-size: 0.9375rem;
+            font-weight: 600;
+            padding: 10px 15px;
+            background: var(--bg);
+            border-radius: 10px;
+            margin-bottom: 10px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .vaccine-item {
+            display: flex;
+            align-items: center;
+            padding: 15px;
+            background: var(--bg);
+            border-radius: 12px;
+            margin-bottom: 10px;
+        }
+
+        .vaccine-checkbox {
+            width: 24px;
+            height: 24px;
+            border-radius: 50%;
+            border: 2px solid var(--primary);
+            margin-right: 12px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            flex-shrink: 0;
+        }
+
+        .vaccine-checkbox.checked {
+            background: var(--success);
+            border-color: var(--success);
+            color: white;
+        }
+
+        .vaccine-checkbox.upcoming {
+            background: var(--warning);
+            border-color: var(--warning);
+        }
+
+        .vaccine-info {
+            flex: 1;
+        }
+
+        .vaccine-name {
+            font-weight: 500;
+            margin-bottom: 4px;
+            font-size: 0.9375rem;
+        }
+
+        .vaccine-schedule {
+            font-size: 0.8125rem;
+            color: var(--text-light);
+        }
+
+        .vaccine-status {
+            font-size: 0.8125rem;
+            padding: 4px 10px;
+            border-radius: 10px;
+            font-weight: 500;
+        }
+
+        .status-completed {
+            background: rgba(81,207,102,0.2);
+            color: var(--success);
+        }
+
+        .status-upcoming {
+            background: rgba(255,212,59,0.2);
+            color: #F59F00;
+        }
+
+        .status-pending {
+            background: rgba(136,136,136,0.1);
+            color: var(--text-light);
+        }
+
+        /* 图表容器 */
+        .chart-container {
+            position: relative;
+            height: 250px;
+            margin-top: 15px;
+        }
+
+        /* 快速记录按钮 */
+        .quick-actions {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 10px;
+            margin-bottom: 15px;
+        }
+
+        .quick-btn {
+            padding: 20px;
+            border-radius: 16px;
+            border: none;
+            cursor: pointer;
+            transition: transform 0.2s;
+            text-align: center;
+        }
+
+        .quick-btn:active {
+            transform: scale(0.95);
+        }
+
+        .quick-btn .emoji {
+            font-size: 32px;
+            display: block;
+            margin-bottom: 8px;
+        }
+
+        .quick-btn .label {
+            font-size: 0.9375rem;
+            font-weight: 500;
+        }
+
+        /* 模态框 */
+        .modal {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: rgba(0,0,0,0.5);
+            z-index: 1000;
+            align-items: center;
+            justify-content: center;
+            padding: 20px;
+        }
+
+        .modal.active {
+            display: flex;
+        }
+
+        .modal-content {
+            background: white;
+            border-radius: 20px;
+            padding: 25px;
+            width: 100%;
+            max-width: 400px;
+            max-height: 80vh;
+            overflow-y: auto;
+        }
+
+        .modal-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 20px;
+        }
+
+        .modal-title {
+            font-size: 1.125rem;
+            font-weight: 600;
+        }
+
+        .modal-close {
+            background: none;
+            border: none;
+            font-size: 28px;
+            cursor: pointer;
+            color: var(--text-light);
+            width: 36px;
+            height: 36px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        /* 趋势卡片 */
+        .trend-cards {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 10px;
+            margin-bottom: 15px;
+        }
+
+        .trend-card {
+            background: var(--bg);
+            padding: 15px;
+            border-radius: 12px;
+            text-align: center;
+        }
+
+        .trend-value {
+            font-size: 1.25rem;
+            font-weight: 600;
+            color: var(--primary-dark);
+        }
+
+        .trend-label {
+            font-size: 0.75rem;
+            color: var(--text-light);
+            margin-top: 4px;
+        }
+
+        /* 黄疸值输入 */
+        .jaundice-input {
+            display: flex;
+            gap: 10px;
+            align-items: flex-end;
+        }
+
+        .jaundice-input .form-group {
+            flex: 1;
+        }
+
+        /* 分析结果 */
+        .analysis-result {
+            padding: 15px;
+            border-radius: 12px;
+            margin-top: 15px;
+            font-size: 0.9375rem;
+        }
+
+        .analysis-result.normal {
+            background: rgba(81,207,102,0.1);
+            color: var(--success);
+        }
+
+        .analysis-result.warning {
+            background: rgba(255,212,59,0.2);
+            color: #F59F00;
+        }
+
+        .analysis-result.danger {
+            background: rgba(255,107,107,0.1);
+            color: var(--danger);
+        }
+
+        /* 空状态 */
+        .empty-state {
+            text-align: center;
+            padding: 40px;
+            color: var(--text-light);
+            font-size: 0.9375rem;
+        }
+
+        .empty-state .emoji {
+            font-size: 48px;
+            margin-bottom: 10px;
+        }
+
+        /* 底部导航 */
+        .bottom-nav {
+            position: fixed;
+            bottom: 0;
+            left: 0;
+            right: 0;
+            background: white;
+            display: flex;
+            justify-content: space-around;
+            padding: 8px 0;
+            padding-bottom: calc(8px + env(safe-area-inset-bottom));
+            box-shadow: 0 -2px 10px rgba(0,0,0,0.05);
+            z-index: 99;
+        }
+
+        .nav-item {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            padding: 5px 15px;
+            color: var(--text-light);
+            text-decoration: none;
+            font-size: 0.75rem;
+            cursor: pointer;
+        }
+
+        .nav-item.active {
+            color: var(--primary);
+        }
+
+        .nav-item .icon {
+            font-size: 22px;
+            margin-bottom: 3px;
+        }
+
+        /* 宝宝列表 */
+        .baby-list {
+            margin-bottom: 15px;
+        }
+
+        .baby-list-item {
+            display: flex;
+            align-items: center;
+            padding: 15px;
+            background: var(--bg);
+            border-radius: 12px;
+            margin-bottom: 10px;
+            cursor: pointer;
+        }
+
+        .baby-list-item.active {
+            border: 2px solid var(--primary);
+        }
+
+        .switcher-btn {
+            background: var(--secondary);
+            color: var(--text);
+            padding: 12px;
+            border-radius: 12px;
+            text-align: center;
+            cursor: pointer;
+            font-weight: 500;
+        }
+
+        /* 时间选择器 */
+        .time-inputs {
+            display: flex;
+            gap: 10px;
+            align-items: center;
+        }
+
+        .time-inputs .form-group {
+            flex: 1;
+        }
+
+        .time-separator {
+            padding-top: 35px;
+            font-weight: 600;
+        }
+
+        /* 字体大小设置 */
+        .font-size-options {
+            display: flex;
+            gap: 10px;
+        }
+
+        .font-size-option {
+            flex: 1;
+            padding: 12px;
+            border: 2px solid #eee;
+            border-radius: 12px;
+            background: white;
+            cursor: pointer;
+            text-align: center;
+            font-weight: 500;
+            font-size: 0.9375rem;
+        }
+
+        .font-size-option.active {
+            border-color: var(--primary);
+            background: rgba(255,154,162,0.1);
+            color: var(--primary-dark);
+        }
+
+        /* 图表小标题 */
+        .chart-subtitle {
+            font-size: 0.875rem;
+            font-weight: 500;
+            color: var(--text);
+            margin-top: 18px;
+            margin-bottom: 5px;
+            padding-left: 5px;
+        }
+
+        .chart-subtitle:first-of-type {
+            margin-top: 0;
+        }
+    </style>
+</head>
+<body>
+    <!-- 头部 -->
+    <header class="header">
+        <div class="header-left">
+            <h1>🍼 宝宝日记</h1>
+            <span style="font-size:10px;opacity:0.7;background:rgba(255,255,255,0.2);padding:2px 6px;border-radius:8px;">v5</span>
+        </div>
+        <div class="header-right">
+            <button class="settings-btn" onclick="showModal('settingsModal')">⚙️</button>
+            <button class="baby-selector" onclick="showBabyModal()">切换宝宝</button>
+        </div>
+    </header>
+
+    <!-- 宝宝信息卡片 -->
+    <div class="baby-info-card" id="babyInfoCard">
+        <div class="baby-basic">
+            <div class="baby-avatar" id="babyAvatar">👶</div>
+            <div class="baby-details">
+                <h2 id="babyName">请添加宝宝</h2>
+                <div class="baby-meta" id="babyAge">--</div>
+            </div>
+        </div>
+        <div class="baby-stats">
+            <div class="stat-item">
+                <div class="stat-value" id="currentWeight">--</div>
+                <div class="stat-label">体重(kg)</div>
+            </div>
+            <div class="stat-item">
+                <div class="stat-value" id="currentHeight">--</div>
+                <div class="stat-label">身高(cm)</div>
+            </div>
+            <div class="stat-item">
+                <div class="stat-value" id="todayFeeds">--</div>
+                <div class="stat-label">今日喂养</div>
+            </div>
+        </div>
+    </div>
+
+    <!-- 导航标签 -->
+    <div class="nav-tabs">
+        <button class="nav-tab active" data-tab="overview">总览</button>
+        <button class="nav-tab" data-tab="growth">生长</button>
+        <button class="nav-tab" data-tab="feeding">喂养</button>
+        <button class="nav-tab" data-tab="diaper">大小便</button>
+        <button class="nav-tab" data-tab="jaundice">黄疸</button>
+        <button class="nav-tab" data-tab="vaccine">疫苗</button>
+    </div>
+
+    <!-- 总览页面 -->
+    <section class="content-section active" id="overview">
+        <div class="quick-actions">
+            <button class="quick-btn" style="background: linear-gradient(135deg, #FFD1DC, #FF9AA2);" onclick="showModal('feedingModal')">
+                <span class="emoji">🍼</span>
+                <span class="label">记录喂奶</span>
+            </button>
+            <button class="quick-btn" style="background: linear-gradient(135deg, #E0F7FA, #B2EBF2);" onclick="showModal('diaperModal')">
+                <span class="emoji">💩</span>
+                <span class="label">记录大小便</span>
+            </button>
+            <button class="quick-btn" style="background: linear-gradient(135deg, #FFF3E0, #FFE0B2);" onclick="showModal('growthModal')">
+                <span class="emoji">📏</span>
+                <span class="label">记录身高体重</span>
+            </button>
+            <button class="quick-btn" style="background: linear-gradient(135deg, #F3E5F5, #E1BEE7);" onclick="showModal('jaundiceModal')">
+                <span class="emoji">💛</span>
+                <span class="label">记录黄疸值</span>
+            </button>
+        </div>
+
+        <div class="card">
+            <div class="card-title">
+                <span class="icon" style="background: rgba(255,154,162,0.2);">📊</span>
+                今日概览
+            </div>
+            <div class="trend-cards">
+                <div class="trend-card">
+                    <div class="trend-value" id="todayFeedCount">0</div>
+                    <div class="trend-label">喂奶次数</div>
+                </div>
+                <div class="trend-card">
+                    <div class="trend-value" id="todayFeedDuration">0</div>
+                    <div class="trend-label">喂养时长</div>
+                </div>
+                <div class="trend-card">
+                    <div class="trend-value" id="todayDiaperCount">0</div>
+                    <div class="trend-label">换尿布</div>
+                </div>
+            </div>
+        </div>
+
+        <div class="card" id="nextVaccineCard">
+            <div class="card-title">
+                <span class="icon" style="background: rgba(255,212,59,0.2);">💉</span>
+                下次疫苗接种
+            </div>
+            <div id="nextVaccineInfo">
+                <div class="empty-state">
+                    <div class="emoji">📅</div>
+                    <div>暂无待接种信息</div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- 生长记录页面 -->
+    <section class="content-section" id="growth">
+        <div class="card">
+            <div class="card-title">
+                <span class="icon" style="background: rgba(255,154,162,0.2);">📏</span>
+                记录身高体重
+            </div>
+            <form id="growthForm">
+                <div class="form-group">
+                    <label class="form-label">日期</label>
+                    <input type="date" class="form-input" id="growthDate" required>
+                </div>
+                <div class="form-group">
+                    <label class="form-label">体重 (kg)</label>
+                    <input type="number" class="form-input" id="growthWeight" step="0.01" placeholder="例如: 5.2" required>
+                </div>
+                <div class="form-group">
+                    <label class="form-label">身高 (cm)</label>
+                    <input type="number" class="form-input" id="growthHeight" step="0.1" placeholder="例如: 58.5" required>
+                </div>
+                <button type="submit" class="btn btn-primary">保存记录</button>
+            </form>
+        </div>
+
+        <div class="card">
+            <div class="card-title">
+                <span class="icon" style="background: rgba(181,234,215,0.3);">📈</span>
+                生长趋势
+            </div>
+            <div class="chart-subtitle">体重趋势 (kg)</div>
+            <div class="chart-container">
+                <canvas id="weightChart"></canvas>
+            </div>
+            <div class="chart-subtitle">身高趋势 (cm)</div>
+            <div class="chart-container">
+                <canvas id="heightChart"></canvas>
+            </div>
+        </div>
+
+        <div class="card">
+            <div class="card-title">
+                <span class="icon" style="background: rgba(199,206,234,0.3);">📝</span>
+                历史记录
+            </div>
+            <div class="record-list" id="growthRecords">
+                <div class="empty-state">
+                    <div class="emoji">📭</div>
+                    <div>暂无记录</div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- 喂养记录页面 -->
+    <section class="content-section" id="feeding">
+        <div class="card">
+            <div class="card-title">
+                <span class="icon" style="background: rgba(255,218,193,0.3);">⏱️</span>
+                喂养计时器
+            </div>
+            <div class="timer-container">
+                <div class="timer-display" id="timerDisplay">00:00:00</div>
+                <div class="timer-buttons">
+                    <button class="timer-btn start" id="startBtn" onclick="startTimer()">▶️</button>
+                    <button class="timer-btn stop" id="stopBtn" onclick="stopTimer()" disabled>⏹️</button>
+                </div>
+            </div>
+        </div>
+
+        <div class="card">
+            <div class="card-title">
+                <span class="icon" style="background: rgba(255,154,162,0.2);">🍼</span>
+                记录喂养
+            </div>
+            <form id="feedingForm">
+                <div class="form-group">
+                    <label class="form-label">开始时间</label>
+                    <input type="datetime-local" class="form-input" id="feedStartTime" required>
+                </div>
+                <div class="form-group" id="feedEndTimeGroup">
+                    <label class="form-label">结束时间</label>
+                    <input type="datetime-local" class="form-input" id="feedEndTime">
+                </div>
+                <div class="form-group">
+                    <label class="form-label">喂养方式</label>
+                    <div class="feed-type-selector">
+                        <div class="feed-type-btn active" data-type="breast" onclick="selectFeedType('breast')">
+                            <span class="emoji">🤱</span>
+                            <div>母乳</div>
+                        </div>
+                        <div class="feed-type-btn" data-type="formula" onclick="selectFeedType('formula')">
+                            <span class="emoji">🍼</span>
+                            <div>奶粉</div>
+                        </div>
+                    </div>
+                </div>
+                <div class="form-group" id="formulaAmountGroup" style="display: none;">
+                    <label class="form-label">奶量 (ml)</label>
+                    <input type="number" class="form-input" id="formulaAmount" placeholder="例如: 120">
+                </div>
+                <div class="form-group" id="feedDurationGroup">
+                    <label class="form-label">喂养时长 (分钟)</label>
+                    <input type="number" class="form-input" id="feedDuration" placeholder="自动计算" readonly style="background: #f5f5f5;">
+                </div>
+                <button type="submit" class="btn btn-primary">保存记录</button>
+            </form>
+        </div>
+
+        <div class="card">
+            <div class="card-title">
+                <span class="icon" style="background: rgba(181,234,215,0.3);">📈</span>
+                喂养趋势
+            </div>
+            <div class="trend-cards">
+                <div class="trend-card">
+                    <div class="trend-value" id="avgFeedDuration">0</div>
+                    <div class="trend-label">平均时长(分)</div>
+                </div>
+                <div class="trend-card">
+                    <div class="trend-value" id="avgFeedAmount">0</div>
+                    <div class="trend-label">平均奶量(ml)</div>
+                </div>
+                <div class="trend-card">
+                    <div class="trend-value" id="feedFrequency">0</div>
+                    <div class="trend-label">今日次数</div>
+                </div>
+            </div>
+            <div class="chart-subtitle">每日喂养次数</div>
+            <div class="chart-container">
+                <canvas id="feedingChart"></canvas>
+            </div>
+            <div class="chart-subtitle">每日奶粉奶量 (ml)</div>
+            <div class="chart-container">
+                <canvas id="feedingAmountChart"></canvas>
+            </div>
+        </div>
+
+        <div class="card">
+            <div class="card-title">
+                <span class="icon" style="background: rgba(199,206,234,0.3);">📝</span>
+                今日记录
+            </div>
+            <div class="record-list" id="feedingRecords">
+                <div class="empty-state">
+                    <div class="emoji">📭</div>
+                    <div>暂无记录</div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- 大小便记录页面 -->
+    <section class="content-section" id="diaper">
+        <div class="card">
+            <div class="card-title">
+                <span class="icon" style="background: rgba(181,234,215,0.3);">💩</span>
+                记录大小便
+            </div>
+            <form id="diaperForm">
+                <div class="form-group">
+                    <label class="form-label">日期</label>
+                    <input type="date" class="form-input" id="diaperDate" required>
+                </div>
+                <div class="form-group">
+                    <label class="form-label">类型</label>
+                    <div class="feed-type-selector">
+                        <div class="feed-type-btn active" data-type="pee" onclick="selectDiaperType('pee')">
+                            <span class="emoji">💧</span>
+                            <div>小便</div>
+                        </div>
+                        <div class="feed-type-btn" data-type="poop" onclick="selectDiaperType('poop')">
+                            <span class="emoji">💩</span>
+                            <div>大便</div>
+                        </div>
+                        <div class="feed-type-btn" data-type="both" onclick="selectDiaperType('both')">
+                            <span class="emoji">💧💩</span>
+                            <div>都有</div>
+                        </div>
+                    </div>
+                </div>
+                <div class="form-group">
+                    <label class="form-label">次数</label>
+                    <input type="number" class="form-input" id="diaperCount" min="1" value="1" placeholder="输入次数">
+                </div>
+                <button type="submit" class="btn btn-primary">保存记录</button>
+            </form>
+        </div>
+
+        <div class="card">
+            <div class="card-title">
+                <span class="icon" style="background: rgba(255,218,193,0.3);">📊</span>
+                今日统计
+            </div>
+            <div class="trend-cards">
+                <div class="trend-card">
+                    <div class="trend-value" id="todayPeeCount">0</div>
+                    <div class="trend-label">小便</div>
+                </div>
+                <div class="trend-card">
+                    <div class="trend-value" id="todayPoopCount">0</div>
+                    <div class="trend-label">大便</div>
+                </div>
+                <div class="trend-card">
+                    <div class="trend-value" id="totalDiaperCount">0</div>
+                    <div class="trend-label">总计</div>
+                </div>
+            </div>
+            <div class="chart-container">
+                <canvas id="diaperChart"></canvas>
+            </div>
+        </div>
+
+        <div class="card">
+            <div class="card-title">
+                <span class="icon" style="background: rgba(199,206,234,0.3);">📝</span>
+                今日记录
+            </div>
+            <div class="record-list" id="diaperRecords">
+                <div class="empty-state">
+                    <div class="emoji">📭</div>
+                    <div>暂无记录</div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- 黄疸记录页面 -->
+    <section class="content-section" id="jaundice">
+        <div class="card">
+            <div class="card-title">
+                <span class="icon" style="background: rgba(255,212,59,0.2);">💛</span>
+                记录黄疸值
+            </div>
+            <form id="jaundiceForm">
+                <div class="form-group">
+                    <label class="form-label">测量时间</label>
+                    <div class="time-inputs">
+                        <div class="form-group">
+                            <input type="date" class="form-input" id="jaundiceDate" required>
+                        </div>
+                        <div class="time-separator">-</div>
+                        <div class="form-group">
+                            <input type="time" class="form-input" id="jaundiceTime" required>
+                        </div>
+                    </div>
+                </div>
+                <div class="form-group">
+                    <label class="form-label">黄疸值 (mg/dL)</label>
+                    <input type="number" class="form-input" id="jaundiceValue" step="0.1" placeholder="例如: 12.5" required>
+                </div>
+                <button type="submit" class="btn btn-primary">保存记录</button>
+            </form>
+        </div>
+
+        <div class="card">
+            <div class="card-title">
+                <span class="icon" style="background: rgba(255,154,162,0.2);">📊</span>
+                黄疸分析
+            </div>
+            <div class="chart-container">
+                <canvas id="jaundiceChart"></canvas>
+            </div>
+            <div class="analysis-result normal" id="jaundiceAnalysis">
+                <strong>分析结果：</strong>请输入黄疸值进行分析
+            </div>
+        </div>
+
+        <div class="card">
+            <div class="card-title">
+                <span class="icon" style="background: rgba(199,206,234,0.3);">📝</span>
+                历史记录
+            </div>
+            <div class="record-list" id="jaundiceRecords">
+                <div class="empty-state">
+                    <div class="emoji">📭</div>
+                    <div>暂无记录</div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- 疫苗接种页面 -->
+    <section class="content-section" id="vaccine">
+        <div class="card">
+            <div class="card-title">
+                <span class="icon" style="background: rgba(255,107,107,0.2);">💉</span>
+                疫苗接种计划
+            </div>
+            <div id="vaccineList">
+            </div>
+        </div>
+    </section>
+
+    <!-- 底部导航 -->
+    <nav class="bottom-nav">
+        <div class="nav-item active" data-section="overview">
+            <span class="icon">🏠</span>
+            <span>首页</span>
+        </div>
+        <div class="nav-item" data-section="growth">
+            <span class="icon">📏</span>
+            <span>生长</span>
+        </div>
+        <div class="nav-item" data-section="feeding">
+            <span class="icon">🍼</span>
+            <span>喂养</span>
+        </div>
+        <div class="nav-item" data-section="diaper">
+            <span class="icon">💩</span>
+            <span>排便</span>
+        </div>
+        <div class="nav-item" data-section="vaccine">
+            <span class="icon">💉</span>
+            <span>疫苗</span>
+        </div>
+    </nav>
+
+    <!-- 设置模态框 -->
+    <div class="modal" id="settingsModal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3 class="modal-title">⚙️ 设置</h3>
+                <button class="modal-close" onclick="closeModal('settingsModal')">&times;</button>
+            </div>
+            <div class="form-group">
+                <label class="form-label">字体大小</label>
+                <div class="font-size-options">
+                    <div class="font-size-option" data-size="0.9" onclick="setFontScale(0.9)">小</div>
+                    <div class="font-size-option active" data-size="1" onclick="setFontScale(1)">标准</div>
+                    <div class="font-size-option" data-size="1.1" onclick="setFontScale(1.1)">大</div>
+                    <div class="font-size-option" data-size="1.2" onclick="setFontScale(1.2)">超大</div>
+                </div>
+            </div>
+            <div class="form-group" style="margin-top:20px;">
+                <label class="form-label">📦 数据管理</label>
+                <div style="display:flex;gap:10px;">
+                    <button class="btn btn-primary" style="flex:1;font-size:0.875rem;padding:12px;" onclick="exportData()">导出数据</button>
+                    <button class="btn" style="flex:1;font-size:0.875rem;padding:12px;background:var(--secondary);color:var(--text);" onclick="document.getElementById('importFile').click()">导入数据</button>
+                    <input type="file" id="importFile" accept=".json" style="display:none" onchange="importData(event)">
+                </div>
+                <p style="font-size:0.75rem;color:var(--text-light);margin-top:8px;">导出所有宝宝数据到文件，换手机或换浏览器时可导入恢复</p>
+            </div>
+        </div>
+    </div>
+
+    <!-- 添加宝宝模态框 -->
+    <div class="modal" id="babyModal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3 class="modal-title">管理宝宝</h3>
+                <button class="modal-close" onclick="closeModal('babyModal')">&times;</button>
+            </div>
+            <div class="baby-list" id="babyList"></div>
+            <button class="btn btn-primary" onclick="showAddBabyForm()">+ 添加新宝宝</button>
+            <form id="addBabyForm" style="display: none; margin-top: 20px;">
+                <div class="form-group">
+                    <label class="form-label">宝宝姓名</label>
+                    <input type="text" class="form-input" id="newBabyName" placeholder="请输入宝宝姓名" required>
+                </div>
+                <div class="form-group">
+                    <label class="form-label">出生日期</label>
+                    <input type="date" class="form-input" id="newBabyBirthDate" required>
+                </div>
+                <div class="form-group">
+                    <label class="form-label">出生体重 (kg)</label>
+                    <input type="number" class="form-input" id="newBabyWeight" step="0.01" placeholder="例如: 3.2" required>
+                </div>
+                <div class="form-group">
+                    <label class="form-label">出生身高 (cm)</label>
+                    <input type="number" class="form-input" id="newBabyHeight" step="0.1" placeholder="例如: 50.0" required>
+                </div>
+                <div class="form-group">
+                    <label class="form-label">性别</label>
+                    <select class="form-select" id="newBabyGender">
+                        <option value="boy">男宝</option>
+                        <option value="girl">女宝</option>
+                    </select>
+                </div>
+                <button type="submit" class="btn btn-primary">添加宝宝</button>
+            </form>
+        </div>
+    </div>
+
+    <!-- 喂养记录模态框 -->
+    <div class="modal" id="feedingModal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3 class="modal-title">快速记录喂奶</h3>
+                <button class="modal-close" onclick="closeModal('feedingModal')">&times;</button>
+            </div>
+            <form id="quickFeedingForm">
+                <div class="form-group">
+                    <label class="form-label">开始时间</label>
+                    <div style="display: flex; gap: 8px;">
+                        <input type="datetime-local" class="form-input" id="quickFeedStartTime" required style="flex: 1;">
+                        <button type="button" class="btn" style="padding: 8px 12px; font-size: 12px;" onclick="setQuickFeedNow('start')">现在</button>
+                    </div>
+                </div>
+                <div class="form-group" id="quickFeedEndTimeGroup">
+                    <label class="form-label">结束时间</label>
+                    <div style="display: flex; gap: 8px;">
+                        <input type="datetime-local" class="form-input" id="quickFeedEndTime" style="flex: 1;">
+                        <button type="button" class="btn" style="padding: 8px 12px; font-size: 12px;" onclick="setQuickFeedNow('end')">现在</button>
+                    </div>
+                </div>
+                <div class="form-group">
+                    <label class="form-label">喂养方式</label>
+                    <div class="feed-type-selector">
+                        <div class="feed-type-btn active" data-type="breast" onclick="selectQuickFeedType('breast')">
+                            <span class="emoji">🤱</span>
+                            <div>母乳</div>
+                        </div>
+                        <div class="feed-type-btn" data-type="formula" onclick="selectQuickFeedType('formula')">
+                            <span class="emoji">🍼</span>
+                            <div>奶粉</div>
+                        </div>
+                    </div>
+                </div>
+                <div class="form-group" id="quickFormulaAmountGroup" style="display: none;">
+                    <label class="form-label">奶量 (ml)</label>
+                    <input type="number" class="form-input" id="quickFormulaAmount" placeholder="例如: 120">
+                </div>
+                <div class="form-group" id="quickFeedDurationGroup">
+                    <label class="form-label">喂养时长 (分钟)</label>
+                    <input type="number" class="form-input" id="quickFeedDuration" placeholder="自动计算" readonly style="background: #f5f5f5;">
+                </div>
+                <button type="submit" class="btn btn-primary">保存记录</button>
+            </form>
+        </div>
+    </div>
+
+    <!-- 大小便记录模态框 -->
+    <div class="modal" id="diaperModal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3 class="modal-title">快速记录大小便</h3>
+                <button class="modal-close" onclick="closeModal('diaperModal')">&times;</button>
+            </div>
+            <form id="quickDiaperForm">
+                <div class="form-group">
+                    <label class="form-label">日期</label>
+                    <input type="date" class="form-input" id="quickDiaperDate" required>
+                </div>
+                <div class="form-group">
+                    <label class="form-label">类型</label>
+                    <div class="feed-type-selector">
+                        <div class="feed-type-btn active" data-type="pee" onclick="selectQuickDiaperType('pee')">
+                            <span class="emoji">💧</span>
+                            <div>小便</div>
+                        </div>
+                        <div class="feed-type-btn" data-type="poop" onclick="selectQuickDiaperType('poop')">
+                            <span class="emoji">💩</span>
+                            <div>大便</div>
+                        </div>
+                        <div class="feed-type-btn" data-type="both" onclick="selectQuickDiaperType('both')">
+                            <span class="emoji">💧💩</span>
+                            <div>都有</div>
+                        </div>
+                    </div>
+                </div>
+                <div class="form-group">
+                    <label class="form-label">次数</label>
+                    <input type="number" class="form-input" id="quickDiaperCount" min="1" value="1" placeholder="输入次数">
+                </div>
+                <button type="submit" class="btn btn-primary">保存记录</button>
+            </form>
+        </div>
+    </div>
+
+    <!-- 生长记录模态框 -->
+    <div class="modal" id="growthModal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3 class="modal-title">快速记录身高体重</h3>
+                <button class="modal-close" onclick="closeModal('growthModal')">&times;</button>
+            </div>
+            <form id="quickGrowthForm">
+                <div class="form-group">
+                    <label class="form-label">日期</label>
+                    <input type="date" class="form-input" id="quickGrowthDate" required>
+                </div>
+                <div class="form-group">
+                    <label class="form-label">体重 (kg)</label>
+                    <input type="number" class="form-input" id="quickGrowthWeight" step="0.01" placeholder="例如: 5.2" required>
+                </div>
+                <div class="form-group">
+                    <label class="form-label">身高 (cm)</label>
+                    <input type="number" class="form-input" id="quickGrowthHeight" step="0.1" placeholder="例如: 58.5" required>
+                </div>
+                <button type="submit" class="btn btn-primary">保存记录</button>
+            </form>
+        </div>
+    </div>
+
+    <!-- 黄疸记录模态框 -->
+    <div class="modal" id="jaundiceModal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3 class="modal-title">快速记录黄疸值</h3>
+                <button class="modal-close" onclick="closeModal('jaundiceModal')">&times;</button>
+            </div>
+            <form id="quickJaundiceForm">
+                <div class="form-group">
+                    <label class="form-label">测量时间</label>
+                    <input type="datetime-local" class="form-input" id="quickJaundiceDateTime" required>
+                </div>
+                <div class="form-group">
+                    <label class="form-label">黄疸值 (mg/dL)</label>
+                    <input type="number" class="form-input" id="quickJaundiceValue" step="0.1" placeholder="例如: 12.5" required>
+                </div>
+                <button type="submit" class="btn btn-primary">保存记录</button>
+            </form>
+        </div>
+    </div>
+
+    <script>
+        // ========== 离线绘图引擎 ==========
+        function drawChart(canvasId, type, labels, datasets, options) {
+            var canvas = document.getElementById(canvasId);
+            if (!canvas) return;
+            var container = canvas.parentElement;
+            if (container.clientHeight < 50) {
+                container.style.height = '250px';
+            }
+            var dpr = window.devicePixelRatio || 1;
+            var w = container.clientWidth;
+            var h = container.clientHeight;
+            canvas.width = w * dpr;
+            canvas.height = h * dpr;
+            canvas.style.width = w + 'px';
+            canvas.style.height = h + 'px';
+            var ctx = canvas.getContext('2d');
+            ctx.scale(dpr, dpr);
+
+            options = options || {};
+            var yTitle = options.yTitle || '';
+            var stepSize = options.stepSize || 0;
+
+            // Chart area margins
+            var padLeft = 45, padRight = 20, padTop = 25, padBottom = 35;
+            // Extra bottom for legend in bar charts with multiple datasets
+            if (type === 'bar' && datasets.length > 1) {
+                padBottom += 22;
+            }
+            var chartW = w - padLeft - padRight;
+            var chartH = h - padTop - padBottom;
+
+            if (chartW <= 0 || chartH <= 0) return;
+
+            // Compute global min/max across all datasets
+            var allVals = [];
+            datasets.forEach(function(ds) {
+                ds.data.forEach(function(v) { if (v != null) allVals.push(v); });
+            });
+            if (allVals.length === 0) return;
+
+            var minVal = Math.min.apply(null, allVals);
+            var maxVal = Math.max.apply(null, allVals);
+            // 所有图表纵坐标从0开始，不出现负数
+            minVal = 0;
+            if (minVal === maxVal) { maxVal += 1; }
+            // Nice padding
+            var range = maxVal - minVal;
+            maxVal = Math.ceil(maxVal + range * 0.05);
+            range = maxVal - minVal;
+
+            // Auto step size
+            if (!stepSize) {
+                var rough = range / 5;
+                var mag = Math.pow(10, Math.floor(Math.log10(rough)));
+                stepSize = mag;
+                if (rough / mag > 5) stepSize = mag * 10;
+                else if (rough / mag > 2) stepSize = mag * 5;
+                else if (rough / mag > 1) stepSize = mag * 2;
+            }
+
+            function yPos(v) {
+                return padTop + chartH - ((v - minVal) / (maxVal - minVal)) * chartH;
+            }
+
+            // Background
+            ctx.fillStyle = '#ffffff';
+            ctx.fillRect(0, 0, w, h);
+
+            // Grid lines & Y-axis labels
+            ctx.strokeStyle = '#f0f0f0';
+            ctx.lineWidth = 1;
+            ctx.fillStyle = '#999';
+            ctx.font = '11px -apple-system, sans-serif';
+            ctx.textAlign = 'right';
+            ctx.textBaseline = 'middle';
+
+            var startTick = Math.ceil(minVal / stepSize) * stepSize;
+            for (var v = startTick; v <= maxVal; v += stepSize) {
+                var y = yPos(v);
+                if (y < padTop - 5 || y > padTop + chartH + 5) continue;
+                ctx.beginPath();
+                ctx.moveTo(padLeft, y);
+                ctx.lineTo(padLeft + chartW, y);
+                ctx.stroke();
+                ctx.fillText(Number(v.toFixed(2)).toString(), padLeft - 6, y);
+            }
+
+            // X-axis labels
+            ctx.fillStyle = '#999';
+            ctx.textAlign = 'center';
+            ctx.textBaseline = 'top';
+            var n = labels.length;
+            // 根据标签文字长度动态计算最大标签数，避免重叠
+            ctx.font = '11px -apple-system, sans-serif';
+            var maxLabelWidth = 0;
+            for (var li = 0; li < n; li++) {
+                var lw = ctx.measureText(labels[li]).width;
+                if (lw > maxLabelWidth) maxLabelWidth = lw;
+            }
+            var maxLabels = maxLabelWidth > 0 ? Math.floor(chartW / (maxLabelWidth + 8)) : Math.floor(chartW / 40);
+            maxLabels = Math.max(2, maxLabels);
+            var labelStep = Math.max(1, Math.ceil(n / maxLabels));
+
+            for (var i = 0; i < n; i++) {
+                if (i % labelStep !== 0 && i !== n - 1) continue;
+                var x = padLeft + (n === 1 ? chartW / 2 : (i / (n - 1)) * chartW);
+                ctx.fillText(labels[i], x, padTop + chartH + 8);
+            }
+
+            // Y-axis title
+            if (yTitle) {
+                ctx.save();
+                ctx.fillStyle = '#999';
+                ctx.font = '11px -apple-system, sans-serif';
+                ctx.textAlign = 'center';
+                ctx.textBaseline = 'middle';
+                ctx.translate(12, padTop + chartH / 2);
+                ctx.rotate(-Math.PI / 2);
+                ctx.fillText(yTitle, 0, 0);
+                ctx.restore();
+            }
+
+            // Axis lines
+            ctx.strokeStyle = '#ddd';
+            ctx.lineWidth = 1;
+            ctx.beginPath();
+            ctx.moveTo(padLeft, padTop);
+            ctx.lineTo(padLeft, padTop + chartH);
+            ctx.lineTo(padLeft + chartW, padTop + chartH);
+            ctx.stroke();
+
+            // Helper: parse color to rgba
+            function colorAlpha(color, alpha) {
+                if (color.indexOf('rgba') === 0) {
+                    return color.replace(/,[^,]*\)/, ',' + alpha + ')');
+                }
+                if (color.indexOf('#') === 0) {
+                    var hex = color.slice(1);
+                    if (hex.length === 3) hex = hex[0]+hex[0]+hex[1]+hex[1]+hex[2]+hex[2];
+                    var r = parseInt(hex.slice(0,2), 16);
+                    var g = parseInt(hex.slice(2,4), 16);
+                    var b = parseInt(hex.slice(4,6), 16);
+                    return 'rgba(' + r + ',' + g + ',' + b + ',' + alpha + ')';
+                }
+                return color;
+            }
+
+            // Smooth bezier helper through points
+            function smoothPath(ctx, pts, close) {
+                if (pts.length < 2) return;
+                ctx.moveTo(pts[0].x, pts[0].y);
+                if (pts.length === 2) {
+                    ctx.lineTo(pts[1].x, pts[1].y);
+                    return;
+                }
+                for (var i = 0; i < pts.length - 1; i++) {
+                    var p0 = pts[Math.max(0, i - 1)];
+                    var p1 = pts[i];
+                    var p2 = pts[i + 1];
+                    var p3 = pts[Math.min(pts.length - 1, i + 2)];
+                    var cp1x = p1.x + (p2.x - p0.x) / 6;
+                    var cp1y = p1.y + (p2.y - p0.y) / 6;
+                    var cp2x = p2.x - (p3.x - p1.x) / 6;
+                    var cp2y = p2.y - (p3.y - p1.y) / 6;
+                    ctx.bezierCurveTo(cp1x, cp1y, cp2x, cp2y, p2.x, p2.y);
+                }
+            }
+
+            if (type === 'line') {
+                datasets.forEach(function(ds) {
+                    var pts = [];
+                    for (var i = 0; i < ds.data.length; i++) {
+                        var x = padLeft + (n === 1 ? chartW / 2 : (i / (n - 1)) * chartW);
+                        pts.push({ x: x, y: yPos(ds.data[i]) });
+                    }
+
+                    // Fill area
+                    var baseY = yPos(Math.max(minVal, 0));
+                    ctx.beginPath();
+                    smoothPath(ctx, pts);
+                    ctx.lineTo(pts[pts.length - 1].x, baseY);
+                    ctx.lineTo(pts[0].x, baseY);
+                    ctx.closePath();
+                    ctx.fillStyle = colorAlpha(ds.color, 0.15);
+                    ctx.fill();
+
+                    // Line
+                    ctx.beginPath();
+                    smoothPath(ctx, pts);
+                    ctx.strokeStyle = ds.color;
+                    ctx.lineWidth = 2.5;
+                    ctx.lineJoin = 'round';
+                    ctx.lineCap = 'round';
+                    ctx.stroke();
+
+                    // Data points
+                    pts.forEach(function(p) {
+                        ctx.beginPath();
+                        ctx.arc(p.x, p.y, 4, 0, Math.PI * 2);
+                        ctx.fillStyle = ds.color;
+                        ctx.fill();
+                        ctx.strokeStyle = '#fff';
+                        ctx.lineWidth = 1.5;
+                        ctx.stroke();
+                    });
+                });
+            }
+
+            if (type === 'bar') {
+                var dsCount = datasets.length;
+                var groupW = chartW / n;
+                var barPad = groupW * 0.15;
+                var barW = (groupW - barPad * 2 - (dsCount - 1) * 3) / dsCount;
+                if (barW < 4) barW = Math.max(4, (groupW - barPad * 2) / dsCount - 2);
+
+                var baseY = yPos(Math.max(minVal, 0));
+
+                datasets.forEach(function(ds, di) {
+                    var fillColor = ds.color;
+                    for (var i = 0; i < ds.data.length; i++) {
+                        var gx = padLeft + i * groupW;
+                        var bx = gx + barPad + di * (barW + 3);
+                        var val = ds.data[i];
+                        var by = yPos(val);
+                        var bh = baseY - by;
+                        var radius = Math.min(4, barW / 3, Math.abs(bh) / 2);
+
+                        ctx.beginPath();
+                        if (bh >= 0) {
+                            // bar grows upward
+                            ctx.moveTo(bx, baseY);
+                            ctx.lineTo(bx, by + radius);
+                            ctx.quadraticCurveTo(bx, by, bx + radius, by);
+                            ctx.lineTo(bx + barW - radius, by);
+                            ctx.quadraticCurveTo(bx + barW, by, bx + barW, by + radius);
+                            ctx.lineTo(bx + barW, baseY);
+                        } else {
+                            // bar grows downward
+                            ctx.moveTo(bx, baseY);
+                            ctx.lineTo(bx, by - radius);
+                            ctx.quadraticCurveTo(bx, by, bx + radius, by);
+                            ctx.lineTo(bx + barW - radius, by);
+                            ctx.quadraticCurveTo(bx + barW, by, bx + barW, by - radius);
+                            ctx.lineTo(bx + barW, baseY);
+                        }
+                        ctx.closePath();
+                        ctx.fillStyle = fillColor;
+                        ctx.fill();
+                    }
+                });
+
+                // Legend for bar charts with multiple datasets
+                if (dsCount > 1) {
+                    var legendY = padTop + chartH + 22;
+                    var legendX = padLeft;
+                    ctx.font = '11px -apple-system, sans-serif';
+                    ctx.textBaseline = 'middle';
+                    ctx.textAlign = 'left';
+                    datasets.forEach(function(ds, di) {
+                        ctx.fillStyle = ds.color;
+                        ctx.fillRect(legendX, legendY - 5, 12, 10);
+                        legendX += 16;
+                        ctx.fillStyle = '#666';
+                        ctx.fillText(ds.label, legendX, legendY);
+                        legendX += ctx.measureText(ds.label).width + 16;
+                    });
+                }
+            }
+        }
+
+        // ========== 数据管理 ==========
+        const DataManager = {
+            getBabies() {
+                return JSON.parse(localStorage.getItem('babies') || '[]');
+            },
+            saveBabies(babies) {
+                localStorage.setItem('babies', JSON.stringify(babies));
+            },
+            getCurrentBaby() {
+                return localStorage.getItem('currentBaby') || null;
+            },
+            setCurrentBaby(babyId) {
+                localStorage.setItem('currentBaby', babyId);
+            },
+            getRecords(babyId, type) {
+                const key = `records_${babyId}_${type}`;
+                return JSON.parse(localStorage.getItem(key) || '[]');
+            },
+            saveRecord(babyId, type, record) {
+                const records = this.getRecords(babyId, type);
+                record.id = Date.now();
+                record.createdAt = new Date().toISOString();
+                records.push(record);
+                const key = `records_${babyId}_${type}`;
+                localStorage.setItem(key, JSON.stringify(records));
+                incrementSaveCount();
+                return record;
+            },
+            deleteRecord(babyId, type, recordId) {
+                const records = this.getRecords(babyId, type);
+                const filtered = records.filter(r => r.id !== recordId);
+                const key = `records_${babyId}_${type}`;
+                localStorage.setItem(key, JSON.stringify(filtered));
+            },
+            getVaccineRecords(babyId) {
+                return JSON.parse(localStorage.getItem(`vaccines_${babyId}`) || '{}');
+            },
+            saveVaccineRecord(babyId, vaccineId, date) {
+                const records = this.getVaccineRecords(babyId);
+                records[vaccineId] = date;
+                localStorage.setItem(`vaccines_${babyId}`, JSON.stringify(records));
+            }
+        };
+
+        // ========== 疫苗数据 ==========
+        const VaccineData = [
+            { id: 'hepb1', name: '乙肝疫苗(第1针)', schedule: '出生时', day: 0 },
+            { id: 'bcg', name: '卡介苗', schedule: '出生时', day: 0 },
+            { id: 'hepb2', name: '乙肝疫苗(第2针)', schedule: '1月龄', day: 30 },
+            { id: 'ipv1', name: '脊灰疫苗(第1针)', schedule: '2月龄', day: 60 },
+            { id: 'dtp1', name: '百白破疫苗(第1针)', schedule: '3月龄', day: 90 },
+            { id: 'ipv2', name: '脊灰疫苗(第2针)', schedule: '3月龄', day: 90 },
+            { id: 'dtp2', name: '百白破疫苗(第2针)', schedule: '4月龄', day: 120 },
+            { id: 'ipv3', name: '脊灰疫苗(第3针)', schedule: '4月龄', day: 120 },
+            { id: 'hib1', name: 'Hib疫苗(第1针)', schedule: '4月龄', day: 120 },
+            { id: 'dtp3', name: '百白破疫苗(第3针)', schedule: '5月龄', day: 150 },
+            { id: 'hib2', name: 'Hib疫苗(第2针)', schedule: '5月龄', day: 150 },
+            { id: 'hepb3', name: '乙肝疫苗(第3针)', schedule: '6月龄', day: 180 },
+            { id: 'ev71_1', name: 'EV71疫苗(第1针)', schedule: '6月龄', day: 180 },
+            { id: 'flu1', name: '流感疫苗(第1针)', schedule: '6月龄', day: 180 },
+            { id: 'ev71_2', name: 'EV71疫苗(第2针)', schedule: '7月龄', day: 210 },
+            { id: 'flu2', name: '流感疫苗(第2针)', schedule: '7月龄', day: 210 },
+            { id: 'hib3', name: 'Hib疫苗(第3针)', schedule: '6-8月龄', day: 210 },
+            { id: 'mv', name: '麻腮风疫苗(第1针)', schedule: '8月龄', day: 240 },
+            { id: 'je1', name: '乙脑减毒活疫苗(第1针)', schedule: '8月龄', day: 240 },
+            { id: 'dtp4', name: '百白破疫苗(第4针)', schedule: '18月龄', day: 540 },
+            { id: 'hib4', name: 'Hib疫苗(第4针)', schedule: '18月龄', day: 540 },
+            { id: 'mv2', name: '麻腮风疫苗(第2针)', schedule: '18月龄', day: 540 },
+            { id: 'hepa', name: '甲肝疫苗', schedule: '18月龄', day: 540 },
+            { id: 'ipv4', name: '脊灰疫苗(第4针)', schedule: '4周岁', day: 1460 },
+            { id: 'dtp5', name: '百白破疫苗(第5针)', schedule: '6周岁', day: 2190 }
+        ];
+
+        // ========== 全局状态 ==========
+        let currentBaby = null;
+        let timerInterval = null;
+        let timerSeconds = 0;
+        let currentFeedType = 'breast';
+        let currentDiaperType = 'pee';
+
+        // ========== 初始化 ==========
+        document.addEventListener('DOMContentLoaded', () => {
+            loadFontScale();
+            initApp();
+            setupEventListeners();
+            setupNavigation();
+            setupLiveTimeUpdate();
+        });
+
+        function initApp() {
+            // 调试：显示JS获取到的时间
+            const dbg = new Date();
+            console.log('JS本地时间:', dbg.getFullYear()+'-'+pad2(dbg.getMonth()+1)+'-'+pad2(dbg.getDate())+' '+pad2(dbg.getHours())+':'+pad2(dbg.getMinutes())+':'+pad2(dbg.getSeconds()), '时区偏移:', dbg.getTimezoneOffset());
+
+            const babies = DataManager.getBabies();
+            const currentId = DataManager.getCurrentBaby();
+
+            if (babies.length === 0) {
+                showBabyModal();
+            } else {
+                currentBaby = babies.find(b => b.id === currentId) || babies[0];
+                DataManager.setCurrentBaby(currentBaby.id);
+                updateBabyInfo();
+                loadAllData();
+            }
+
+            resetAllDateTimes();
+        }
+
+        // ========== 获取当前手机本地时间字符串 ==========
+        function pad2(n) { return String(n).padStart(2, '0'); }
+
+        function getNowLocal() {
+            const d = new Date();
+            // 直接使用本地时间的各个字段拼接，避免时区问题
+            return `${d.getFullYear()}-${pad2(d.getMonth()+1)}-${pad2(d.getDate())}T${pad2(d.getHours())}:${pad2(d.getMinutes())}`;
+        }
+
+        function getTodayLocal() {
+            const d = new Date();
+            return `${d.getFullYear()}-${pad2(d.getMonth()+1)}-${pad2(d.getDate())}`;
+        }
+
+        function getNowTimeLocal() {
+            const d = new Date();
+            return `${pad2(d.getHours())}:${pad2(d.getMinutes())}`;
+        }
+
+        // 重置所有 datetime-local 输入框为当前手机时间
+        function resetAllDateTimes() {
+            const now = getNowLocal();
+            const today = getTodayLocal();
+            const time = getNowTimeLocal();
+
+            document.querySelectorAll('input[type="datetime-local"]').forEach(input => {
+                input.value = now;
+            });
+            document.querySelectorAll('input[type="date"]').forEach(input => {
+                input.value = today;
+            });
+            document.querySelectorAll('input[type="time"]').forEach(input => {
+                input.value = time;
+            });
+        }
+
+        // ========== 实时自动更新时间输入框 ==========
+        const _activeInputs = new Set();
+        // 这些输入框不自动更新时间（允许手动输入）
+        const _manualTimeInputs = new Set(['quickFeedStartTime', 'quickFeedEndTime', 'feedStartTime', 'feedEndTime']);
+
+        function setupLiveTimeUpdate() {
+            // 用户聚焦输入框时标记为手动编辑
+            document.querySelectorAll('input[type="datetime-local"], input[type="time"]').forEach(input => {
+                input.addEventListener('focus', () => _activeInputs.add(input));
+                input.addEventListener('blur', () => _activeInputs.delete(input));
+                input.addEventListener('change', () => _activeInputs.add(input));
+            });
+
+            // 每10秒自动更新未在手动编辑的时间输入框（排除手动输入的时间框）
+            setInterval(() => {
+                const now = getNowLocal();
+                const time = getNowTimeLocal();
+
+                document.querySelectorAll('input[type="datetime-local"]').forEach(input => {
+                    // 跳过手动时间输入框
+                    if (_manualTimeInputs.has(input.id)) return;
+                    if (!_activeInputs.has(input)) {
+                        input.value = now;
+                    }
+                });
+                document.querySelectorAll('input[type="time"]').forEach(input => {
+                    if (!_activeInputs.has(input)) {
+                        input.value = time;
+                    }
+                });
+            }, 10000);
+        }
+
+        // ========== 页面缩放设置 ==========
+        function loadFontScale() {
+            const saved = localStorage.getItem('pageScale') || '1';
+            applyFontScale(parseFloat(saved));
+        }
+
+        function setFontScale(scale) {
+            localStorage.setItem('pageScale', scale);
+            applyFontScale(scale);
+        }
+
+        function applyFontScale(scale) {
+            document.documentElement.style.setProperty('--page-scale', scale);
+            document.querySelectorAll('.font-size-option').forEach(opt => {
+                opt.classList.toggle('active', parseFloat(opt.dataset.size) === scale);
+            });
+        }
+
+        // ========== 数据导出/导入 ==========
+        function exportData() {
+            // 导出所有 localStorage 中与本应用相关的数据
+            const exportObj = {};
+            for (let i = 0; i < localStorage.length; i++) {
+                const key = localStorage.key(i);
+                if (key === 'babies' || key === 'currentBaby' || key === 'pageScale' ||
+                    key.startsWith('records_') || key.startsWith('vaccines_')) {
+                    exportObj[key] = localStorage.getItem(key);
+                }
+            }
+            const json = JSON.stringify(exportObj, null, 2);
+            const blob = new Blob([json], { type: 'application/json' });
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = '宝宝成长日记_' + getTodayLocal() + '.json';
+            a.click();
+            URL.revokeObjectURL(url);
+            alert('数据已导出，请保存文件！');
+        }
+
+        function importData(event) {
+            const file = event.target.files[0];
+            if (!file) return;
+            const reader = new FileReader();
+            reader.onload = function(e) {
+                try {
+                    const data = JSON.parse(e.target.result);
+                    const keys = Object.keys(data);
+                    if (keys.length === 0) {
+                        alert('文件中没有可导入的数据');
+                        return;
+                    }
+                    if (!confirm('导入将覆盖当前所有数据，确定继续吗？\n\n将导入 ' + keys.length + ' 条数据')) {
+                        return;
+                    }
+                    // 先清除旧数据
+                    const keysToRemove = [];
+                    for (let i = 0; i < localStorage.length; i++) {
+                        const k = localStorage.key(i);
+                        if (k === 'babies' || k === 'currentBaby' || k.startsWith('records_') || k.startsWith('vaccines_')) {
+                            keysToRemove.push(k);
+                        }
+                    }
+                    keysToRemove.forEach(k => localStorage.removeItem(k));
+                    // 写入新数据
+                    keys.forEach(k => localStorage.setItem(k, data[k]));
+                    // 重新加载
+                    location.reload();
+                } catch (err) {
+                    alert('文件格式错误，请选择正确的备份文件');
+                }
+            };
+            reader.readAsText(file);
+            event.target.value = '';
+        }
+
+        // ========== 宝宝管理 ==========
+        function showBabyModal() {
+            const babies = DataManager.getBabies();
+            const list = document.getElementById('babyList');
+            list.innerHTML = '';
+
+            if (babies.length === 0) {
+                list.innerHTML = '<div class="empty-state"><div class="emoji">👶</div><div>还没有添加宝宝</div></div>';
+            } else {
+                babies.forEach(baby => {
+                    const item = document.createElement('div');
+                    item.className = `baby-list-item ${baby.id === currentBaby?.id ? 'active' : ''}`;
+                    item.innerHTML = `
+                        <div class="baby-avatar" style="width: 40px; height: 40px; font-size: 20px; margin-right: 10px;">
+                            ${baby.gender === 'boy' ? '👦' : '👧'}
+                        </div>
+                        <div style="flex: 1;">
+                            <div style="font-weight: 500;">${baby.name}</div>
+                            <div style="font-size: 0.8125rem; color: var(--text-light);">
+                                ${calculateAge(baby.birthDate)}
+                            </div>
+                        </div>
+                    `;
+                    item.onclick = () => switchBaby(baby);
+                    list.appendChild(item);
+                });
+            }
+
+            showModal('babyModal');
+        }
+
+        function showAddBabyForm() {
+            document.getElementById('addBabyForm').style.display = 'block';
+        }
+
+        function switchBaby(baby) {
+            currentBaby = baby;
+            DataManager.setCurrentBaby(baby.id);
+            updateBabyInfo();
+            loadAllData();
+            closeModal('babyModal');
+        }
+
+        function updateBabyInfo() {
+            if (!currentBaby) return;
+
+            document.getElementById('babyName').textContent = currentBaby.name;
+            document.getElementById('babyAvatar').textContent = currentBaby.gender === 'boy' ? '👦' : '👧';
+            document.getElementById('babyAge').textContent = calculateAge(currentBaby.birthDate);
+
+            const growthRecords = DataManager.getRecords(currentBaby.id, 'growth').sort((a, b) => a.date.localeCompare(b.date));
+            if (growthRecords.length > 0) {
+                const latest = growthRecords[growthRecords.length - 1];
+                document.getElementById('currentWeight').textContent = latest.weight;
+                document.getElementById('currentHeight').textContent = latest.height;
+            } else {
+                document.getElementById('currentWeight').textContent = currentBaby.birthWeight || '--';
+                document.getElementById('currentHeight').textContent = currentBaby.birthHeight || '--';
+            }
+        }
+
+        function calculateAge(birthDate) {
+            const birth = new Date(birthDate);
+            const now = new Date();
+            const diffTime = Math.abs(now - birth);
+            const diffDays = Math.floor(diffTime / (1000 * 60 * 60 * 24));
+
+            if (diffDays < 30) {
+                return `${diffDays}天`;
+            } else if (diffDays < 365) {
+                const months = Math.floor(diffDays / 30);
+                const days = diffDays % 30;
+                return `${months}个月${days}天`;
+            } else {
+                const years = Math.floor(diffDays / 365);
+                const months = Math.floor((diffDays % 365) / 30);
+                return `${years}岁${months}个月`;
+            }
+        }
+
+        // ========== 表单处理 ==========
+        document.getElementById('addBabyForm').addEventListener('submit', (e) => {
+            e.preventDefault();
+
+            const newBaby = {
+                id: 'baby_' + Date.now(),
+                name: document.getElementById('newBabyName').value,
+                birthDate: document.getElementById('newBabyBirthDate').value,
+                birthWeight: parseFloat(document.getElementById('newBabyWeight').value),
+                birthHeight: parseFloat(document.getElementById('newBabyHeight').value),
+                gender: document.getElementById('newBabyGender').value,
+                createdAt: new Date().toISOString()
+            };
+
+            const babies = DataManager.getBabies();
+            babies.push(newBaby);
+            DataManager.saveBabies(babies);
+
+            currentBaby = newBaby;
+            DataManager.setCurrentBaby(newBaby.id);
+            updateBabyInfo();
+            closeModal('babyModal');
+            loadAllData();
+
+            e.target.reset();
+            e.target.style.display = 'none';
+        });
+
+        // 生长记录
+        document.getElementById('growthForm').addEventListener('submit', (e) => {
+            e.preventDefault();
+            if (!currentBaby) return;
+
+            const record = {
+                date: document.getElementById('growthDate').value,
+                weight: parseFloat(document.getElementById('growthWeight').value),
+                height: parseFloat(document.getElementById('growthHeight').value)
+            };
+
+            DataManager.saveRecord(currentBaby.id, 'growth', record);
+            e.target.reset();
+            document.getElementById('growthDate').value = getTodayLocal();
+            loadGrowthData();
+            updateBabyInfo();
+        });
+
+        document.getElementById('quickGrowthForm').addEventListener('submit', (e) => {
+            e.preventDefault();
+            if (!currentBaby) return;
+
+            const record = {
+                date: document.getElementById('quickGrowthDate').value,
+                weight: parseFloat(document.getElementById('quickGrowthWeight').value),
+                height: parseFloat(document.getElementById('quickGrowthHeight').value)
+            };
+
+            DataManager.saveRecord(currentBaby.id, 'growth', record);
+            e.target.reset();
+            document.getElementById('quickGrowthDate').value = getTodayLocal();
+            loadGrowthData();
+            closeModal('growthModal');
+            updateBabyInfo();
+        });
+
+        // 喂养记录
+        document.getElementById('feedingForm').addEventListener('submit', (e) => {
+            e.preventDefault();
+            if (!currentBaby) return;
+
+            const record = {
+                time: document.getElementById('feedStartTime').value,
+                endTime: currentFeedType === 'breast' ? document.getElementById('feedEndTime').value : '',
+                type: currentFeedType,
+                amount: currentFeedType === 'formula' ? parseFloat(document.getElementById('formulaAmount').value) || 0 : 0,
+                duration: currentFeedType === 'breast' ? parseFloat(document.getElementById('feedDuration').value) || 0 : 0
+            };
+
+            DataManager.saveRecord(currentBaby.id, 'feeding', record);
+            e.target.reset();
+            _activeInputs.delete(document.getElementById('feedStartTime'));
+            _activeInputs.delete(document.getElementById('feedEndTime'));
+            document.getElementById('feedStartTime').value = '';
+            document.getElementById('feedEndTime').value = '';
+            document.getElementById('formulaAmountGroup').style.display = 'none';
+            document.getElementById('feedEndTimeGroup').style.display = 'block';
+            document.getElementById('feedDurationGroup').style.display = 'block';
+            loadFeedingData();
+            loadOverviewData();
+        });
+
+        document.getElementById('quickFeedingForm').addEventListener('submit', (e) => {
+            e.preventDefault();
+            if (!currentBaby) return;
+
+            const feedType = document.querySelector('#quickFeedingForm .feed-type-btn.active').dataset.type;
+            const record = {
+                time: document.getElementById('quickFeedStartTime').value,
+                endTime: feedType === 'breast' ? document.getElementById('quickFeedEndTime').value : '',
+                type: feedType,
+                amount: feedType === 'formula' ?
+                    parseFloat(document.getElementById('quickFormulaAmount').value) || 0 : 0,
+                duration: feedType === 'breast' ? parseFloat(document.getElementById('quickFeedDuration').value) || 0 : 0
+            };
+
+            DataManager.saveRecord(currentBaby.id, 'feeding', record);
+            e.target.reset();
+            _activeInputs.delete(document.getElementById('quickFeedStartTime'));
+            _activeInputs.delete(document.getElementById('quickFeedEndTime'));
+            document.getElementById('quickFeedStartTime').value = '';
+            document.getElementById('quickFeedEndTime').value = '';
+            document.getElementById('quickFormulaAmountGroup').style.display = 'none';
+            document.getElementById('quickFeedEndTimeGroup').style.display = 'block';
+            document.getElementById('quickFeedDurationGroup').style.display = 'block';
+            loadFeedingData();
+            loadOverviewData();
+            closeModal('feedingModal');
+        });
+
+        // 大小便记录
+        document.getElementById('diaperForm').addEventListener('submit', (e) => {
+            e.preventDefault();
+            if (!currentBaby) return;
+
+            const date = document.getElementById('diaperDate').value;
+            const count = parseInt(document.getElementById('diaperCount').value) || 1;
+            // 根据次数保存多条记录
+            for (let i = 0; i < count; i++) {
+                const record = {
+                    time: date,
+                    type: currentDiaperType
+                };
+                DataManager.saveRecord(currentBaby.id, 'diaper', record);
+            }
+            document.getElementById('diaperCount').value = 1;
+            document.getElementById('diaperDate').value = '';
+            loadDiaperData();
+            loadOverviewData();
+        });
+
+        document.getElementById('quickDiaperForm').addEventListener('submit', (e) => {
+            e.preventDefault();
+            if (!currentBaby) return;
+
+            const date = document.getElementById('quickDiaperDate').value;
+            const type = document.querySelector('#quickDiaperForm .feed-type-btn.active').dataset.type;
+            const count = parseInt(document.getElementById('quickDiaperCount').value) || 1;
+            for (let i = 0; i < count; i++) {
+                const record = {
+                    time: date,
+                    type: type
+                };
+                DataManager.saveRecord(currentBaby.id, 'diaper', record);
+            }
+            document.getElementById('quickDiaperCount').value = 1;
+            document.getElementById('quickDiaperDate').value = '';
+            loadDiaperData();
+            loadOverviewData();
+            closeModal('diaperModal');
+        });
+
+        // 黄疸记录
+        document.getElementById('jaundiceForm').addEventListener('submit', (e) => {
+            e.preventDefault();
+            if (!currentBaby) return;
+
+            const date = document.getElementById('jaundiceDate').value;
+            const time = document.getElementById('jaundiceTime').value;
+
+            const record = {
+                datetime: `${date}T${time}`,
+                value: parseFloat(document.getElementById('jaundiceValue').value)
+            };
+
+            DataManager.saveRecord(currentBaby.id, 'jaundice', record);
+            e.target.reset();
+            _activeInputs.delete(document.getElementById('jaundiceTime'));
+            document.getElementById('jaundiceDate').value = getTodayLocal();
+            document.getElementById('jaundiceTime').value = getNowTimeLocal();
+            loadJaundiceData();
+        });
+
+        document.getElementById('quickJaundiceForm').addEventListener('submit', (e) => {
+            e.preventDefault();
+            if (!currentBaby) return;
+
+            const record = {
+                datetime: document.getElementById('quickJaundiceDateTime').value,
+                value: parseFloat(document.getElementById('quickJaundiceValue').value)
+            };
+
+            DataManager.saveRecord(currentBaby.id, 'jaundice', record);
+            e.target.reset();
+            _activeInputs.delete(document.getElementById('quickJaundiceDateTime'));
+            document.getElementById('quickJaundiceDateTime').value = getNowLocal();
+            loadJaundiceData();
+            closeModal('jaundiceModal');
+        });
+
+        // ========== 数据加载 ==========
+        function loadAllData() {
+            if (!currentBaby) return;
+            loadGrowthData();
+            loadFeedingData();
+            loadDiaperData();
+            loadJaundiceData();
+            loadVaccineData();
+            loadOverviewData();
+        }
+
+        function loadGrowthData() {
+            const records = DataManager.getRecords(currentBaby.id, 'growth').sort((a, b) => a.date.localeCompare(b.date));
+
+            if (records.length > 0) {
+                const latest = records[records.length - 1];
+                document.getElementById('currentWeight').textContent = latest.weight;
+                document.getElementById('currentHeight').textContent = latest.height;
+            }
+
+            const list = document.getElementById('growthRecords');
+            if (records.length === 0) {
+                list.innerHTML = '<div class="empty-state"><div class="emoji">📭</div><div>暂无记录</div></div>';
+            } else {
+                list.innerHTML = [...records].reverse().map(r => `
+                    <div class="record-item">
+                        <div class="record-info">
+                            <div class="record-value">${r.weight}kg / ${r.height}cm</div>
+                            <div class="record-time">${formatDate(r.date)}</div>
+                        </div>
+                        <button class="delete-btn" onclick="deleteRecord('growth', ${r.id})">🗑️</button>
+                    </div>
+                `).join('');
+            }
+
+            updateGrowthCharts(records);
+        }
+
+        function loadFeedingData() {
+            const records = DataManager.getRecords(currentBaby.id, 'feeding').sort((a, b) => a.time.localeCompare(b.time));
+            const today = getTodayLocal();
+            const todayRecords = records.filter(r => r.time && r.time.startsWith(today));
+
+            document.getElementById('todayFeeds').textContent = todayRecords.length;
+            document.getElementById('todayFeedCount').textContent = todayRecords.length;
+            document.getElementById('feedFrequency').textContent = todayRecords.length;
+
+            const totalDuration = todayRecords.reduce((sum, r) => sum + (r.duration || 0), 0);
+            const hours = Math.floor(totalDuration / 60);
+            const minutes = Math.round(totalDuration % 60);
+            document.getElementById('todayFeedDuration').textContent = hours > 0 ? `${hours}时${minutes}分` : `${minutes}分`;
+
+            const avgDuration = records.length > 0 ?
+                Math.round(records.reduce((sum, r) => sum + (r.duration || 0), 0) / records.length) : 0;
+            document.getElementById('avgFeedDuration').textContent = avgDuration;
+
+            const formulaRecords = records.filter(r => r.type === 'formula' && r.amount > 0);
+            const avgAmount = formulaRecords.length > 0 ?
+                Math.round(formulaRecords.reduce((sum, r) => sum + r.amount, 0) / formulaRecords.length) : 0;
+            document.getElementById('avgFeedAmount').textContent = avgAmount;
+
+            const list = document.getElementById('feedingRecords');
+            if (todayRecords.length === 0) {
+                list.innerHTML = '<div class="empty-state"><div class="emoji">📭</div><div>暂无记录</div></div>';
+            } else {
+                list.innerHTML = [...todayRecords].reverse().map(r => {
+                    let startTimeStr = '--:--';
+                    let endTimeStr = '--:--';
+                    if (r.time && r.endTime) {
+                        startTimeStr = formatTimeFromDateTime(r.time);
+                        endTimeStr = formatTimeFromDateTime(r.endTime);
+                    } else if (r.time && r.duration) {
+                        const endDate = new Date(r.time);
+                        const startDate = new Date(endDate.getTime() - (r.duration || 0) * 60000);
+                        // 使用本地时间方法，避免 toISOString 导致的 UTC 时区问题
+                        startTimeStr = formatTimeFromDateTime(`${startDate.getFullYear()}-${pad2(startDate.getMonth()+1)}-${pad2(startDate.getDate())}T${pad2(startDate.getHours())}:${pad2(startDate.getMinutes())}`);
+                        endTimeStr = formatTimeFromDateTime(r.time);
+                    } else if (r.time) {
+                        startTimeStr = formatTimeFromDateTime(r.time);
+                    }
+                    return `
+                    <div class="record-item">
+                        <div class="record-info">
+                            <div class="record-value">${r.type === 'breast' ? '🤱 母乳' : '🍼 奶粉 ' + r.amount + 'ml'} ${r.duration}分钟</div>
+                            <div class="record-time">${startTimeStr} - ${endTimeStr}</div>
+                        </div>
+                        <button class="delete-btn" onclick="deleteRecord('feeding', ${r.id})">🗑️</button>
+                    </div>
+                `}).join('');
+            }
+
+            updateFeedingCharts(records);
+        }
+
+        function loadDiaperData() {
+            const records = DataManager.getRecords(currentBaby.id, 'diaper');
+            const today = getTodayLocal();
+            const todayRecords = records.filter(r => r.time && (r.time.startsWith(today) || r.time === today));
+
+            const peeCount = todayRecords.filter(r => r.type === 'pee' || r.type === 'both').length;
+            const poopCount = todayRecords.filter(r => r.type === 'poop' || r.type === 'both').length;
+
+            document.getElementById('todayDiaperCount').textContent = todayRecords.length;
+            document.getElementById('todayPeeCount').textContent = peeCount;
+            document.getElementById('todayPoopCount').textContent = poopCount;
+            document.getElementById('totalDiaperCount').textContent = todayRecords.length;
+
+            const list = document.getElementById('diaperRecords');
+            if (todayRecords.length === 0) {
+                list.innerHTML = '<div class="empty-state"><div class="emoji">📭</div><div>暂无记录</div></div>';
+            } else {
+                list.innerHTML = [...todayRecords].reverse().map(r => `
+                    <div class="record-item">
+                        <div class="record-info">
+                            <div class="record-value">${r.type === 'pee' ? '💧 小便' : r.type === 'poop' ? '💩 大便' : '💧💩 都有'}</div>
+                            <div class="record-time">${formatDate(r.time)}</div>
+                        </div>
+                        <button class="delete-btn" onclick="deleteRecord('diaper', ${r.id})">🗑️</button>
+                    </div>
+                `).join('');
+            }
+
+            updateDiaperChart(records);
+        }
+
+        function loadJaundiceData() {
+            const records = DataManager.getRecords(currentBaby.id, 'jaundice').sort((a, b) => a.datetime.localeCompare(b.datetime));
+
+            const list = document.getElementById('jaundiceRecords');
+            if (records.length === 0) {
+                list.innerHTML = '<div class="empty-state"><div class="emoji">📭</div><div>暂无记录</div></div>';
+            } else {
+                list.innerHTML = [...records].reverse().map(r => {
+                    const status = analyzeJaundice(r.value);
+                    return `
+                    <div class="record-item">
+                        <div class="record-info">
+                            <div class="record-value">${r.value} mg/dL <span style="color: ${status.color}">${status.text}</span></div>
+                            <div class="record-time">${formatDateTime(r.datetime)}</div>
+                        </div>
+                        <button class="delete-btn" onclick="deleteRecord('jaundice', ${r.id})">🗑️</button>
+                    </div>
+                `}).join('');
+            }
+
+            updateJaundiceChart(records);
+
+            if (records.length > 0) {
+                const latest = records[records.length - 1];
+                const analysis = analyzeJaundice(latest.value);
+                const analysisDiv = document.getElementById('jaundiceAnalysis');
+                analysisDiv.className = `analysis-result ${analysis.class}`;
+                analysisDiv.innerHTML = `<strong>分析结果：</strong>黄疸值 ${latest.value} mg/dL - ${analysis.advice}`;
+            }
+        }
+
+        function analyzeJaundice(value) {
+            if (value < 12) {
+                return { text: '正常', color: '#51CF66', class: 'normal', advice: '黄疸值在正常范围内，请继续观察' };
+            } else if (value < 15) {
+                return { text: '偏高', color: '#F59F00', class: 'warning', advice: '黄疸值略高，建议增加喂养频次，多晒太阳，密切观察' };
+            } else {
+                return { text: '超标', color: '#FF6B6B', class: 'danger', advice: '黄疸值超标，建议及时就医咨询专业医生' };
+            }
+        }
+
+        function loadVaccineData() {
+            const vaccineRecords = DataManager.getVaccineRecords(currentBaby.id);
+            const birthDate = new Date(currentBaby.birthDate);
+            const today = new Date();
+
+            const completed = [];
+            const upcoming = [];
+            const pending = [];
+
+            VaccineData.forEach(v => {
+                const dueDate = new Date(birthDate);
+                dueDate.setDate(dueDate.getDate() + v.day);
+                const isCompleted = vaccineRecords[v.id];
+                const record = {
+                    ...v,
+                    dueDate: dueDate,
+                    completedDate: vaccineRecords[v.id]
+                };
+
+                if (isCompleted) {
+                    completed.push(record);
+                } else if (dueDate <= today) {
+                    upcoming.push(record);
+                } else if (upcoming.filter(u => u.dueDate > today).length < 3) {
+                    upcoming.push(record);
+                } else {
+                    pending.push(record);
+                }
+            });
+
+            const futureUpcoming = upcoming.filter(v => !vaccineRecords[v.id]);
+            const nextVaccine = futureUpcoming[0];
+            const nextVaccineInfo = document.getElementById('nextVaccineInfo');
+            if (nextVaccine) {
+                const daysUntil = Math.ceil((nextVaccine.dueDate - today) / (1000 * 60 * 60 * 24));
+                nextVaccineInfo.innerHTML = `
+                    <div class="vaccine-item">
+                        <div class="vaccine-checkbox upcoming">⚠️</div>
+                        <div class="vaccine-info">
+                            <div class="vaccine-name">${nextVaccine.name}</div>
+                            <div class="vaccine-schedule">建议接种时间: ${formatDate(nextVaccine.dueDate.toISOString().slice(0, 10))}</div>
+                        </div>
+                        <span class="vaccine-status status-upcoming">${daysUntil <= 0 ? '已到期' : daysUntil + '天后'}</span>
+                    </div>
+                `;
+            } else {
+                nextVaccineInfo.innerHTML = '<div class="empty-state"><div class="emoji">✅</div><div>暂无待接种疫苗</div></div>';
+            }
+
+            const container = document.getElementById('vaccineList');
+            container.innerHTML = '';
+
+            if (futureUpcoming.length > 0) {
+                const section = document.createElement('div');
+                section.className = 'vaccine-section';
+                section.innerHTML = `<div class="vaccine-section-title">⚠️ 待完成 (最近3次)</div>`;
+                futureUpcoming.slice(0, 3).forEach(v => {
+                    section.innerHTML += createVaccineItem(v, vaccineRecords);
+                });
+                container.appendChild(section);
+            }
+
+            if (completed.length > 0) {
+                const section = document.createElement('div');
+                section.className = 'vaccine-section';
+                section.innerHTML = `<div class="vaccine-section-title">✅ 已完成</div>`;
+                completed.forEach(v => {
+                    section.innerHTML += createVaccineItem(v, vaccineRecords);
+                });
+                container.appendChild(section);
+            }
+
+            if (pending.length > 0) {
+                const section = document.createElement('div');
+                section.className = 'vaccine-section';
+                section.innerHTML = `<div class="vaccine-section-title">📋 未完成</div>`;
+                pending.forEach(v => {
+                    section.innerHTML += createVaccineItem(v, vaccineRecords);
+                });
+                container.appendChild(section);
+            }
+        }
+
+        function createVaccineItem(v, records) {
+            const isCompleted = records[v.id];
+            return `
+                <div class="vaccine-item" onclick="toggleVaccine('${v.id}')">
+                    <div class="vaccine-checkbox ${isCompleted ? 'checked' : ''}" style="cursor: pointer;">
+                        ${isCompleted ? '✓' : ''}
+                    </div>
+                    <div class="vaccine-info">
+                        <div class="vaccine-name">${v.name}</div>
+                        <div class="vaccine-schedule">建议: ${v.schedule} | ${formatDate(v.dueDate.toISOString().slice(0, 10))}</div>
+                    </div>
+                    <span class="vaccine-status ${isCompleted ? 'status-completed' : 'status-pending'}">
+                        ${isCompleted ? '已完成' : '未完成'}
+                    </span>
+                </div>
+            `;
+        }
+
+        function loadOverviewData() {
+            if (!currentBaby) return;
+            const feedRecords = DataManager.getRecords(currentBaby.id, 'feeding');
+            const diaperRecords = DataManager.getRecords(currentBaby.id, 'diaper');
+            const today = getTodayLocal();
+            const todayFeeds = feedRecords.filter(r => r.time && r.time.startsWith(today));
+            const todayDiapers = diaperRecords.filter(r => r.time && r.time.startsWith(today));
+
+            document.getElementById('todayFeedCount').textContent = todayFeeds.length;
+            document.getElementById('todayFeeds').textContent = todayFeeds.length;
+            const totalMinutes = Math.round(todayFeeds.reduce((s, r) => s + (r.duration || 0), 0));
+            const hours = Math.floor(totalMinutes / 60);
+            const minutes = totalMinutes % 60;
+            document.getElementById('todayFeedDuration').textContent = hours > 0 ? `${hours}时${minutes}分` : `${minutes}分`;
+            document.getElementById('todayDiaperCount').textContent = todayDiapers.length;
+        }
+
+        // ========== 图表更新（使用内联 drawChart） ==========
+        function updateGrowthCharts(records) {
+            console.log('[updateGrowthCharts] called, records count:', records.length);
+            var weightCanvas = document.getElementById('weightChart');
+            var heightCanvas = document.getElementById('heightChart');
+            if (!weightCanvas || !heightCanvas) {
+                console.log('[updateGrowthCharts] canvas not found');
+                return;
+            }
+
+            if (records.length < 1) {
+                weightCanvas.style.display = 'none';
+                heightCanvas.style.display = 'none';
+                return;
+            }
+            weightCanvas.style.display = 'block';
+            heightCanvas.style.display = 'block';
+
+            var labels = records.map(r => formatDateShort(r.date));
+
+            drawChart('weightChart', 'line', labels, [{
+                data: records.map(r => r.weight),
+                color: '#FF9AA2',
+                label: '体重(kg)'
+            }], { yTitle: 'kg' });
+
+            drawChart('heightChart', 'line', labels, [{
+                data: records.map(r => r.height),
+                color: '#B5EAD7',
+                label: '身高(cm)'
+            }], { yTitle: 'cm' });
+        }
+
+        function updateFeedingCharts(records) {
+            var feedCanvas = document.getElementById('feedingChart');
+            var amountCanvas = document.getElementById('feedingAmountChart');
+            if (!feedCanvas || !amountCanvas) return;
+
+            var dailyData = {};
+            records.forEach(r => {
+                var date = r.time ? r.time.slice(0, 10) : '';
+                if (!date) return;
+                if (!dailyData[date]) {
+                    dailyData[date] = { count: 0, duration: 0, formulaAmount: 0 };
+                }
+                dailyData[date].count++;
+                dailyData[date].duration += r.duration || 0;
+                if (r.type === 'formula') {
+                    dailyData[date].formulaAmount += r.amount || 0;
+                }
+            });
+
+            var dates = Object.keys(dailyData).slice(-7);
+            if (dates.length === 0) {
+                feedCanvas.style.display = 'none';
+                amountCanvas.style.display = 'none';
+                return;
+            }
+            feedCanvas.style.display = 'block';
+            amountCanvas.style.display = 'block';
+
+            drawChart('feedingChart', 'bar', dates.map(d => formatDateShort(d)), [{
+                data: dates.map(d => dailyData[d].count),
+                color: '#FF9AA2',
+                label: '喂养次数'
+            }], { yTitle: '次', stepSize: 1 });
+
+            drawChart('feedingAmountChart', 'bar', dates.map(d => formatDateShort(d)), [{
+                data: dates.map(d => dailyData[d].formulaAmount),
+                color: '#C7CEEA',
+                label: '奶粉量(ml)'
+            }], { yTitle: 'ml' });
+        }
+
+        function updateDiaperChart(records) {
+            var diaperCanvas = document.getElementById('diaperChart');
+            if (!diaperCanvas) {
+                console.log('[updateDiaperChart] canvas not found');
+                return;
+            }
+
+            console.log('[updateDiaperChart] called, records count:', records.length);
+
+            var dailyData = {};
+            records.forEach(r => {
+                var date = r.time ? r.time.slice(0, 10) : '';
+                if (!date) return;
+                if (!dailyData[date]) {
+                    dailyData[date] = { pee: 0, poop: 0 };
+                }
+                if (r.type === 'pee' || r.type === 'both') dailyData[date].pee++;
+                if (r.type === 'poop' || r.type === 'both') dailyData[date].poop++;
+            });
+
+            var dates = Object.keys(dailyData).sort().slice(-7);
+            if (dates.length === 0) {
+                diaperCanvas.style.display = 'none';
+                return;
+            }
+            diaperCanvas.style.display = 'block';
+
+            drawChart('diaperChart', 'bar', dates.map(d => formatDateShort(d)), [{
+                data: dates.map(d => dailyData[d].pee),
+                color: '#B5EAD7',
+                label: '小便'
+            }, {
+                data: dates.map(d => dailyData[d].poop),
+                color: '#FFDAC1',
+                label: '大便'
+            }], { yTitle: '次', stepSize: 1 });
+        }
+
+        function updateJaundiceChart(records) {
+            var ctx = document.getElementById('jaundiceChart');
+            if (!ctx) return;
+
+            if (records.length < 2) {
+                ctx.style.display = 'none';
+                return;
+            }
+            ctx.style.display = 'block';
+
+            drawChart('jaundiceChart', 'line', records.map(r => formatDateShort(r.datetime)), [{
+                data: records.map(r => r.value),
+                color: '#FFD43B',
+                label: '黄疸值(mg/dL)'
+            }], { yTitle: 'mg/dL' });
+        }
+
+        // 自动计算喂养时长
+        function calculateFeedDuration() {
+            const startTime = document.getElementById('feedStartTime').value;
+            const endTime = document.getElementById('feedEndTime').value;
+            if (startTime && endTime) {
+                const start = new Date(startTime);
+                const end = new Date(endTime);
+                const duration = Math.round((end - start) / (1000 * 60));
+                if (duration > 0) {
+                    document.getElementById('feedDuration').value = duration;
+                }
+            }
+        }
+
+        document.getElementById('feedStartTime').addEventListener('change', calculateFeedDuration);
+        document.getElementById('feedEndTime').addEventListener('change', calculateFeedDuration);
+
+        // 快速记录自动计算喂养时长
+        function calculateQuickFeedDuration() {
+            const startTime = document.getElementById('quickFeedStartTime').value;
+            const endTime = document.getElementById('quickFeedEndTime').value;
+            if (startTime && endTime) {
+                const start = new Date(startTime);
+                const end = new Date(endTime);
+                const duration = Math.round((end - start) / (1000 * 60));
+                if (duration > 0) {
+                    document.getElementById('quickFeedDuration').value = duration;
+                }
+            }
+        }
+
+        document.getElementById('quickFeedStartTime').addEventListener('change', calculateQuickFeedDuration);
+        document.getElementById('quickFeedEndTime').addEventListener('change', calculateQuickFeedDuration);
+
+        // ========== 计时器功能 ==========
+        let timerStartTime = null;
+
+        function startTimer() {
+            document.getElementById('startBtn').disabled = true;
+            document.getElementById('stopBtn').disabled = false;
+
+            // 记录开始时间并填入表单，清空结束时间
+            timerStartTime = getNowLocal();
+            document.getElementById('feedStartTime').value = timerStartTime;
+            document.getElementById('feedEndTime').value = '';
+            document.getElementById('feedDuration').value = '';
+
+            timerInterval = setInterval(() => {
+                timerSeconds++;
+                updateTimerDisplay();
+            }, 1000);
+        }
+
+        function stopTimer() {
+            clearInterval(timerInterval);
+            timerInterval = null;
+
+            document.getElementById('startBtn').disabled = false;
+            document.getElementById('stopBtn').disabled = true;
+
+            // 记录结束时间并填入表单
+            const endTime = getNowLocal();
+            document.getElementById('feedEndTime').value = endTime;
+
+            const minutes = Math.ceil(timerSeconds / 60);
+            document.getElementById('feedDuration').value = minutes;
+
+            timerSeconds = 0;
+            updateTimerDisplay();
+        }
+
+        function updateTimerDisplay() {
+            const hours = Math.floor(timerSeconds / 3600);
+            const minutes = Math.floor((timerSeconds % 3600) / 60);
+            const seconds = timerSeconds % 60;
+
+            document.getElementById('timerDisplay').textContent =
+                `${String(hours).padStart(2, '0')}:${String(minutes).padStart(2, '0')}:${String(seconds).padStart(2, '0')}`;
+        }
+
+        // ========== 工具函数 ==========
+        function selectFeedType(type) {
+            currentFeedType = type;
+            document.querySelectorAll('#feedingForm .feed-type-btn').forEach(btn => {
+                btn.classList.toggle('active', btn.dataset.type === type);
+            });
+            // 奶粉：隐藏结束时间和时长，显示奶量；母乳：显示结束时间和时长，隐藏奶量
+            var isFormula = type === 'formula';
+            document.getElementById('feedEndTimeGroup').style.display = isFormula ? 'none' : 'block';
+            document.getElementById('feedDurationGroup').style.display = isFormula ? 'none' : 'block';
+            document.getElementById('formulaAmountGroup').style.display = isFormula ? 'block' : 'none';
+            if (isFormula) {
+                document.getElementById('feedEndTime').value = '';
+                document.getElementById('feedDuration').value = '';
+            }
+        }
+
+        function selectQuickFeedType(type) {
+            document.querySelectorAll('#quickFeedingForm .feed-type-btn').forEach(btn => {
+                btn.classList.toggle('active', btn.dataset.type === type);
+            });
+            var isFormula = type === 'formula';
+            document.getElementById('quickFeedEndTimeGroup').style.display = isFormula ? 'none' : 'block';
+            document.getElementById('quickFeedDurationGroup').style.display = isFormula ? 'none' : 'block';
+            document.getElementById('quickFormulaAmountGroup').style.display = isFormula ? 'block' : 'none';
+            if (isFormula) {
+                document.getElementById('quickFeedEndTime').value = '';
+                document.getElementById('quickFeedDuration').value = '';
+            }
+        }
+
+        // 快速记录 - 点击"现在"按钮填充当前时间
+        function setQuickFeedNow(which) {
+            const now = getNowLocal();
+            if (which === 'start') {
+                document.getElementById('quickFeedStartTime').value = now;
+            } else {
+                document.getElementById('quickFeedEndTime').value = now;
+            }
+            calculateQuickFeedDuration();
+        }
+
+        function selectDiaperType(type) {
+            currentDiaperType = type;
+            document.querySelectorAll('#diaperForm .feed-type-btn').forEach(btn => {
+                btn.classList.toggle('active', btn.dataset.type === type);
+            });
+        }
+
+        function selectQuickDiaperType(type) {
+            document.querySelectorAll('#quickDiaperForm .feed-type-btn').forEach(btn => {
+                btn.classList.toggle('active', btn.dataset.type === type);
+            });
+        }
+
+        function toggleVaccine(vaccineId) {
+            const records = DataManager.getVaccineRecords(currentBaby.id);
+            if (records[vaccineId]) {
+                delete records[vaccineId];
+                localStorage.setItem(`vaccines_${currentBaby.id}`, JSON.stringify(records));
+            } else {
+                DataManager.saveVaccineRecord(currentBaby.id, vaccineId, getTodayLocal());
+            }
+            loadVaccineData();
+            loadOverviewData();
+        }
+
+        function deleteRecord(type, id) {
+            if (confirm('确定要删除这条记录吗？')) {
+                DataManager.deleteRecord(currentBaby.id, type, id);
+                loadAllData();
+            }
+        }
+
+        function formatDate(dateStr) {
+            const date = new Date(dateStr);
+            return `${date.getMonth() + 1}月${date.getDate()}日`;
+        }
+
+        function formatDateShort(dateStr) {
+            const date = new Date(dateStr);
+            return `${date.getMonth() + 1}/${date.getDate()}`;
+        }
+
+        function formatDateTime(datetimeStr) {
+            const date = new Date(datetimeStr);
+            return `${date.getMonth() + 1}月${date.getDate()}日 ${String(date.getHours()).padStart(2, '0')}:${String(date.getMinutes()).padStart(2, '0')}`;
+        }
+
+        function formatTimeFromDateTime(dateTimeStr) {
+            if (!dateTimeStr) return '--:--';
+            const date = new Date(dateTimeStr);
+            return `${String(date.getHours()).padStart(2, '0')}:${String(date.getMinutes()).padStart(2, '0')}`;
+        }
+
+        // ========== 导航和UI ==========
+        function setupNavigation() {
+            document.querySelectorAll('.nav-tab').forEach(tab => {
+                tab.addEventListener('click', () => {
+                    const section = tab.dataset.tab;
+                    switchSection(section);
+
+                    document.querySelectorAll('.nav-tab').forEach(t => t.classList.remove('active'));
+                    tab.classList.add('active');
+
+                    document.querySelectorAll('.bottom-nav .nav-item').forEach(i => {
+                        i.classList.toggle('active', i.dataset.section === section);
+                    });
+                });
+            });
+
+            document.querySelectorAll('.bottom-nav .nav-item').forEach(item => {
+                item.addEventListener('click', () => {
+                    const section = item.dataset.section;
+                    switchSection(section);
+
+                    document.querySelectorAll('.bottom-nav .nav-item').forEach(i => i.classList.remove('active'));
+                    item.classList.add('active');
+
+                    document.querySelectorAll('.nav-tab').forEach(t => {
+                        t.classList.toggle('active', t.dataset.tab === section);
+                    });
+                });
+            });
+        }
+
+        function switchSection(section) {
+            document.querySelectorAll('.content-section').forEach(s => s.classList.remove('active'));
+            document.getElementById(section).classList.add('active');
+            // 切换页面时重新绘制图表（解决 canvas 在隐藏状态下尺寸为0的问题）
+            setTimeout(function() {
+                if (section === 'growth') loadGrowthData();
+                else if (section === 'feeding') loadFeedingData();
+                else if (section === 'diaper') loadDiaperData();
+                else if (section === 'jaundice') loadJaundiceData();
+            }, 50);
+        }
+
+        function showModal(modalId) {
+            const modal = document.getElementById(modalId);
+            // 快速喂养模态框不自动填充时间，让用户手动输入
+            if (modalId !== 'feedingModal') {
+                modal.querySelectorAll('input[type="datetime-local"]').forEach(input => {
+                    input.value = getNowLocal();
+                });
+            }
+            modal.querySelectorAll('input[type="date"]').forEach(input => {
+                input.value = getTodayLocal();
+            });
+            modal.querySelectorAll('input[type="time"]').forEach(input => {
+                input.value = getNowTimeLocal();
+            });
+            modal.classList.add('active');
+        }
+
+        function closeModal(modalId) {
+            document.getElementById(modalId).classList.remove('active');
+        }
+
+        function setupEventListeners() {
+            document.querySelectorAll('.modal').forEach(modal => {
+                modal.addEventListener('click', (e) => {
+                    if (e.target === modal) {
+                        modal.classList.remove('active');
+                    }
+                });
+            });
+
+            // 自动备份提醒：每5次保存记录后提醒导出
+            checkBackupReminder();
+        }
+
+        function checkBackupReminder() {
+            let saveCount = parseInt(localStorage.getItem('saveCount') || '0');
+            if (saveCount > 0 && saveCount % 5 === 0) {
+                const lastReminder = localStorage.getItem('lastBackupReminder') || '';
+                const today = getTodayLocal();
+                if (lastReminder !== today) {
+                    localStorage.setItem('lastBackupReminder', today);
+                    setTimeout(() => {
+                        if (confirm('💡 您已记录 ' + saveCount + ' 条数据，建议导出备份防止数据丢失！\n\n是否现在导出？')) {
+                            exportData();
+                        }
+                    }, 2000);
+                }
+            }
+        }
+
+        function incrementSaveCount() {
+            let count = parseInt(localStorage.getItem('saveCount') || '0') + 1;
+            localStorage.setItem('saveCount', count);
+        }
+    </script>
+</body>
+</html>
