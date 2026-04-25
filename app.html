@@ -1020,23 +1020,26 @@
             </div>
             <div class="trend-cards">
                 <div class="trend-card">
-                    <div class="trend-value" id="avgFeedDuration">0</div>
-                    <div class="trend-label">平均时长(分)</div>
-                </div>
-                <div class="trend-card">
                     <div class="trend-value" id="avgFeedAmount">0</div>
-                    <div class="trend-label">平均奶量(ml)</div>
+                    <div class="trend-label">平均奶粉量(ml)</div>
                 </div>
                 <div class="trend-card">
                     <div class="trend-value" id="feedFrequency">0</div>
-                    <div class="trend-label">今日次数</div>
+                    <div class="trend-label">今日次数(母乳+奶粉)</div>
+                </div>
+                <div class="trend-card">
+                    <button class="btn" style="font-size:0.8rem;padding:8px;background:#FF6B6B;color:#fff;border:none;border-radius:8px;width:100%;" onclick="if(confirm('确定清空所有喂养记录吗？此操作不可恢复！')){DataManager.clearRecords(currentBaby.id,'feeding');loadAllData();}">🗑️ 清空喂养记录</button>
                 </div>
             </div>
             <div class="chart-subtitle">每日喂养次数</div>
             <div class="chart-container">
                 <canvas id="feedingChart"></canvas>
             </div>
-            <div class="chart-subtitle">每日奶粉奶量 (ml)</div>
+            <div class="chart-subtitle">每日母乳总时长 (min)</div>
+            <div class="chart-container">
+                <canvas id="feedingDurationChart"></canvas>
+            </div>
+            <div class="chart-subtitle">每日奶粉量 (ml)</div>
             <div class="chart-container">
                 <canvas id="feedingAmountChart"></canvas>
             </div>
@@ -1110,6 +1113,9 @@
                 <div class="trend-card">
                     <div class="trend-value" id="totalDiaperCount">0</div>
                     <div class="trend-label">总计</div>
+                </div>
+                <div class="trend-card">
+                    <button class="btn" style="font-size:0.8rem;padding:8px;background:#FF6B6B;color:#fff;border:none;border-radius:8px;width:100%;" onclick="if(confirm('确定清空所有大小便记录吗？此操作不可恢复！')){DataManager.clearRecords(currentBaby.id,'diaper');loadAllData();}">🗑️ 清空记录</button>
                 </div>
             </div>
             <div class="chart-container">
@@ -1717,6 +1723,10 @@
                 const key = `records_${babyId}_${type}`;
                 localStorage.setItem(key, JSON.stringify(filtered));
             },
+            clearRecords(babyId, type) {
+                const key = `records_${babyId}_${type}`;
+                localStorage.removeItem(key);
+            },
             getVaccineRecords(babyId) {
                 return JSON.parse(localStorage.getItem(`vaccines_${babyId}`) || '{}');
             },
@@ -2263,10 +2273,6 @@
             const minutes = Math.round(totalDuration % 60);
             document.getElementById('todayFeedDuration').textContent = hours > 0 ? `${hours}时${minutes}分` : `${minutes}分`;
 
-            const avgDuration = records.length > 0 ?
-                Math.round(records.reduce((sum, r) => sum + (r.duration || 0), 0) / records.length) : 0;
-            document.getElementById('avgFeedDuration').textContent = avgDuration;
-
             const formulaRecords = records.filter(r => r.type === 'formula' && r.amount > 0);
             const avgAmount = formulaRecords.length > 0 ?
                 Math.round(formulaRecords.reduce((sum, r) => sum + r.amount, 0) / formulaRecords.length) : 0;
@@ -2531,6 +2537,7 @@
         function updateFeedingCharts(records) {
             var feedCanvas = document.getElementById('feedingChart');
             var amountCanvas = document.getElementById('feedingAmountChart');
+            var durationCanvas = document.getElementById('feedingDurationChart');
             if (!feedCanvas || !amountCanvas) return;
 
             var dailyData = {};
@@ -2538,33 +2545,46 @@
                 var date = r.time ? r.time.slice(0, 10) : '';
                 if (!date) return;
                 if (!dailyData[date]) {
-                    dailyData[date] = { count: 0, duration: 0, formulaAmount: 0 };
+                    dailyData[date] = { count: 0, duration: 0, breastDuration: 0, formulaAmount: 0 };
                 }
                 dailyData[date].count++;
                 dailyData[date].duration += r.duration || 0;
+                if (r.type === 'breast') {
+                    dailyData[date].breastDuration += r.duration || 0;
+                }
                 if (r.type === 'formula') {
                     dailyData[date].formulaAmount += r.amount || 0;
                 }
             });
 
-            var dates = Object.keys(dailyData).slice(-7);
+            var dates = Object.keys(dailyData).sort().slice(-14);
             if (dates.length === 0) {
                 feedCanvas.style.display = 'none';
                 amountCanvas.style.display = 'none';
+                if (durationCanvas) durationCanvas.style.display = 'none';
                 return;
             }
             feedCanvas.style.display = 'block';
             amountCanvas.style.display = 'block';
+            if (durationCanvas) durationCanvas.style.display = 'block';
 
-            drawChart('feedingChart', 'bar', dates.map(d => formatDateShort(d)), [{
+            drawChart('feedingChart', 'line', dates.map(d => formatDateShort(d)), [{
                 data: dates.map(d => dailyData[d].count),
                 color: '#FF9AA2',
                 label: '喂养次数'
             }], { yTitle: '次', stepSize: 1 });
 
-            drawChart('feedingAmountChart', 'bar', dates.map(d => formatDateShort(d)), [{
+            if (durationCanvas) {
+                drawChart('feedingDurationChart', 'line', dates.map(d => formatDateShort(d)), [{
+                    data: dates.map(d => dailyData[d].breastDuration),
+                    color: '#C7CEEA',
+                    label: '母乳时长(min)'
+                }], { yTitle: 'min' });
+            }
+
+            drawChart('feedingAmountChart', 'line', dates.map(d => formatDateShort(d)), [{
                 data: dates.map(d => dailyData[d].formulaAmount),
-                color: '#C7CEEA',
+                color: '#FFDAC1',
                 label: '奶粉量(ml)'
             }], { yTitle: 'ml' });
         }
@@ -2589,14 +2609,14 @@
                 if (r.type === 'poop' || r.type === 'both') dailyData[date].poop++;
             });
 
-            var dates = Object.keys(dailyData).sort().slice(-7);
+            var dates = Object.keys(dailyData).sort().slice(-14);
             if (dates.length === 0) {
                 diaperCanvas.style.display = 'none';
                 return;
             }
             diaperCanvas.style.display = 'block';
 
-            drawChart('diaperChart', 'bar', dates.map(d => formatDateShort(d)), [{
+            drawChart('diaperChart', 'line', dates.map(d => formatDateShort(d)), [{
                 data: dates.map(d => dailyData[d].pee),
                 color: '#B5EAD7',
                 label: '小便'
@@ -2844,12 +2864,20 @@
 
         function showModal(modalId) {
             const modal = document.getElementById(modalId);
-            // 快速喂养模态框不自动填充时间，让用户手动输入
-            if (modalId !== 'feedingModal') {
+
+            // 快速喂养模态框：重置为母乳模式，清空时间
+            if (modalId === 'feedingModal') {
+                selectQuickFeedType('breast');
+                document.getElementById('quickFeedStartTime').value = '';
+                document.getElementById('quickFeedEndTime').value = '';
+                document.getElementById('quickFeedDuration').value = '';
+                document.getElementById('quickFormulaAmount').value = '';
+            } else {
                 modal.querySelectorAll('input[type="datetime-local"]').forEach(input => {
                     input.value = getNowLocal();
                 });
             }
+
             modal.querySelectorAll('input[type="date"]').forEach(input => {
                 input.value = getTodayLocal();
             });
