@@ -1490,8 +1490,9 @@
             ctx.fillStyle = '#ffffff';
             ctx.fillRect(0, 0, w, h);
 
-            // Grid lines & Y-axis labels
-            ctx.strokeStyle = '#f0f0f0';
+            // Grid lines & Y-axis labels (虚线样式)
+            ctx.setLineDash([4, 4]);
+            ctx.strokeStyle = '#e0e0e0';
             ctx.lineWidth = 1;
             ctx.fillStyle = '#999';
             ctx.font = '11px -apple-system, sans-serif';
@@ -1508,6 +1509,7 @@
                 ctx.stroke();
                 ctx.fillText(Number(v.toFixed(2)).toString(), padLeft - 6, y);
             }
+            ctx.setLineDash([]);
 
             // X-axis labels
             ctx.fillStyle = '#999';
@@ -1728,6 +1730,77 @@
                         legendX += ctx.measureText(ds.label).width + 16;
                     });
                 }
+            }
+
+            // ========== 触摸/鼠标交互：显示某天详细数据 ==========
+            var chartMeta = {
+                padLeft: padLeft, padTop: padTop, chartW: chartW, chartH: chartH,
+                n: n, labels: labels, datasets: datasets, type: type,
+                minVal: minVal, maxVal: maxVal, w: w, h: h, dpr: dpr
+            };
+            canvas._chartMeta = chartMeta;
+
+            if (!canvas._tooltipBound) {
+                canvas._tooltipBound = true;
+
+                var tooltip = canvas.parentElement.querySelector('.chart-tooltip');
+                if (!tooltip) {
+                    tooltip = document.createElement('div');
+                    tooltip.className = 'chart-tooltip';
+                    tooltip.style.cssText = 'position:absolute;background:rgba(0,0,0,0.78);color:#fff;padding:6px 10px;border-radius:8px;font-size:12px;pointer-events:none;opacity:0;transition:opacity 0.15s;z-index:10;white-space:nowrap;line-height:1.5;';
+                    canvas.parentElement.appendChild(tooltip);
+                }
+
+                function showChartTooltip(clientX, clientY) {
+                    var meta = canvas._chartMeta;
+                    if (!meta) return;
+                    var rect = canvas.getBoundingClientRect();
+                    var mx = (clientX - rect.left) * (meta.w / rect.width);
+
+                    var hitIdx = -1;
+                    var minDist = Infinity;
+                    for (var i = 0; i < meta.n; i++) {
+                        var px = meta.n === 1 ? meta.padLeft + meta.chartW / 2 : meta.padLeft + (i / (meta.n - 1)) * meta.chartW;
+                        var dist = Math.abs(mx - px);
+                        if (dist < minDist) { minDist = dist; hitIdx = i; }
+                    }
+
+                    if (hitIdx < 0 || minDist > meta.chartW / Math.max(meta.n, 1) + 15) {
+                        tooltip.style.opacity = '0';
+                        return;
+                    }
+
+                    var html = '<div style="font-weight:600;margin-bottom:2px;">' + meta.labels[hitIdx] + '</div>';
+                    meta.datasets.forEach(function(ds) {
+                        var val = ds.data[hitIdx];
+                        html += '<div>' + ds.label + ': ' + (val != null ? val : '-') + '</div>';
+                    });
+                    tooltip.innerHTML = html;
+                    tooltip.style.opacity = '1';
+
+                    var tipW = tooltip.offsetWidth;
+                    var tipH = tooltip.offsetHeight;
+                    var tipX = clientX - rect.left + 12;
+                    var tipY = clientY - rect.top - tipH - 12;
+                    if (tipX + tipW > rect.width) tipX = clientX - rect.left - tipW - 12;
+                    if (tipY < 0) tipY = clientY - rect.top + 12;
+                    tooltip.style.left = tipX + 'px';
+                    tooltip.style.top = tipY + 'px';
+                }
+
+                function hideChartTooltip() {
+                    var t = canvas.parentElement.querySelector('.chart-tooltip');
+                    if (t) t.style.opacity = '0';
+                }
+
+                canvas.addEventListener('mousemove', function(e) { showChartTooltip(e.clientX, e.clientY); });
+                canvas.addEventListener('mouseleave', hideChartTooltip);
+                canvas.addEventListener('touchmove', function(e) {
+                    e.preventDefault();
+                    var touch = e.touches[0];
+                    showChartTooltip(touch.clientX, touch.clientY);
+                }, { passive: false });
+                canvas.addEventListener('touchend', hideChartTooltip);
             }
         }
 
