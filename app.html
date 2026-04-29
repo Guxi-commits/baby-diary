@@ -1922,8 +1922,8 @@
 
         function getNowLocal() {
             const d = new Date();
-            // 直接使用本地时间的各个字段拼接，避免时区问题，包含秒
-            return `${d.getFullYear()}-${pad2(d.getMonth()+1)}-${pad2(d.getDate())}T${pad2(d.getHours())}:${pad2(d.getMinutes())}:${pad2(d.getSeconds())}`;
+            // 直接使用本地时间的各个字段拼接，避免时区问题
+            return `${d.getFullYear()}-${pad2(d.getMonth()+1)}-${pad2(d.getDate())}T${pad2(d.getHours())}:${pad2(d.getMinutes())}`;
         }
 
         function getTodayLocal() {
