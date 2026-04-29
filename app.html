@@ -2419,13 +2419,15 @@
                     let startTimeStr = '--:--';
                     let endTimeStr = '--:--';
                     if (r.time && r.endTime) {
+                        // 有明确的开始和结束时间
                         startTimeStr = formatTimeFromDateTime(r.time);
                         endTimeStr = formatTimeFromDateTime(r.endTime);
                     } else if (r.time && r.duration) {
-                        const endDate = new Date(r.time);
-                        const startDate = new Date(endDate.getTime() - (r.duration || 0) * 60000);
-                        startTimeStr = formatTimeFromDateTime(`${startDate.getFullYear()}-${pad2(startDate.getMonth()+1)}-${pad2(startDate.getDate())}T${pad2(startDate.getHours())}:${pad2(startDate.getMinutes())}`);
-                        endTimeStr = formatTimeFromDateTime(r.time);
+                        // 只有开始时间和时长，计算结束时间
+                        const startDate = new Date(r.time);
+                        const endDate = new Date(startDate.getTime() + (r.duration || 0) * 60000);
+                        startTimeStr = formatTimeFromDateTime(r.time);
+                        endTimeStr = formatTimeFromDateTime(`${endDate.getFullYear()}-${pad2(endDate.getMonth()+1)}-${pad2(endDate.getDate())}T${pad2(endDate.getHours())}:${pad2(endDate.getMinutes())}`);
                     } else if (r.time) {
                         startTimeStr = formatTimeFromDateTime(r.time);
                     }
