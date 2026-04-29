@@ -1922,8 +1922,8 @@
 
         function getNowLocal() {
             const d = new Date();
-            // 直接使用本地时间的各个字段拼接，避免时区问题
-            return `${d.getFullYear()}-${pad2(d.getMonth()+1)}-${pad2(d.getDate())}T${pad2(d.getHours())}:${pad2(d.getMinutes())}`;
+            // 直接使用本地时间的各个字段拼接，避免时区问题，包含秒
+            return `${d.getFullYear()}-${pad2(d.getMonth()+1)}-${pad2(d.getDate())}T${pad2(d.getHours())}:${pad2(d.getMinutes())}:${pad2(d.getSeconds())}`;
         }
 
         function getTodayLocal() {
@@ -2842,7 +2842,7 @@
             const endTime = getNowLocal();
             document.getElementById('feedEndTime').value = endTime;
 
-            const minutes = Math.ceil(timerSeconds / 60);
+            const minutes = Math.round(timerSeconds / 60);
             document.getElementById('feedDuration').value = minutes;
 
             timerSeconds = 0;
@@ -2949,8 +2949,10 @@
 
         function formatTimeFromDateTime(dateTimeStr) {
             if (!dateTimeStr) return '--:--';
-            const date = new Date(dateTimeStr);
-            return `${String(date.getHours()).padStart(2, '0')}:${String(date.getMinutes()).padStart(2, '0')}`;
+            // 手动解析本地时间字符串，避免时区问题
+            const parts = dateTimeStr.match(/(\d+)-(\d+)-(\d+)T(\d+):(\d+)/);
+            if (!parts) return '--:--';
+            return `${parts[4].padStart(2, '0')}:${parts[5].padStart(2, '0')}`;
         }
 
         // ========== 导航和UI ==========
