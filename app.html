@@ -2820,21 +2820,23 @@
         document.getElementById('quickFeedStartTime').addEventListener('change', calculateQuickFeedDuration);
         document.getElementById('quickFeedEndTime').addEventListener('change', calculateQuickFeedDuration);
 
-        // ========== 计时器功能 ==========
-        let timerStartTime = null;
+        // ========== 计时器功能（基于时间戳，熄屏不影响） ==========
+        let timerStartTimestamp = null;
 
         function startTimer() {
             document.getElementById('startBtn').disabled = true;
             document.getElementById('stopBtn').disabled = false;
 
-            // 记录开始时间并填入表单，清空结束时间
+            // 记录开始时间戳和本地时间字符串
+            timerStartTimestamp = Date.now();
             timerStartTime = getNowLocal();
             document.getElementById('feedStartTime').value = timerStartTime;
             document.getElementById('feedEndTime').value = '';
             document.getElementById('feedDuration').value = '';
 
+            // 用 setInterval 仅用于刷新显示，不用于累计计时
             timerInterval = setInterval(() => {
-                timerSeconds++;
+                timerSeconds = Math.floor((Date.now() - timerStartTimestamp) / 1000);
                 updateTimerDisplay();
             }, 1000);
         }
@@ -2850,10 +2852,13 @@
             const endTime = getNowLocal();
             document.getElementById('feedEndTime').value = endTime;
 
-            const minutes = Math.round(timerSeconds / 60);
+            // 用实际时间差计算时长（不受熄屏影响）
+            const elapsedSeconds = Math.floor((Date.now() - timerStartTimestamp) / 1000);
+            const minutes = Math.round(elapsedSeconds / 60);
             document.getElementById('feedDuration').value = minutes;
 
             timerSeconds = 0;
+            timerStartTimestamp = null;
             updateTimerDisplay();
         }
 
