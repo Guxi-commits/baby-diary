@@ -2418,10 +2418,18 @@
                     // 母乳显示开始-结束时间和时长
                     let startTimeStr = '--:--';
                     let endTimeStr = '--:--';
+                    let displayDuration = r.duration || 0;
                     if (r.time && r.endTime) {
-                        // 有明确的开始和结束时间
+                        // 有明确的开始和结束时间，以实际时间差计算时长
                         startTimeStr = formatTimeFromDateTime(r.time);
                         endTimeStr = formatTimeFromDateTime(r.endTime);
+                        // 计算实际时间差（分钟）
+                        try {
+                            const start = new Date(r.time);
+                            const end = new Date(r.endTime);
+                            const diffMinutes = Math.round((end - start) / (1000 * 60));
+                            if (diffMinutes > 0) displayDuration = diffMinutes;
+                        } catch(e) {}
                     } else if (r.time && r.duration) {
                         // 只有开始时间和时长，计算结束时间
                         const startDate = new Date(r.time);
@@ -2434,7 +2442,7 @@
                     return `
                     <div class="record-item">
                         <div class="record-info">
-                            <div class="record-value">🤱 母乳 ${r.duration}分钟</div>
+                            <div class="record-value">🤱 母乳 ${displayDuration}分钟</div>
                             <div class="record-time">${startTimeStr} - ${endTimeStr}</div>
                         </div>
                         <button class="delete-btn" onclick="deleteRecord('feeding', ${r.id})">🗑️</button>
