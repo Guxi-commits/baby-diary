@@ -1915,6 +1915,7 @@
             }
 
             resetAllDateTimes();
+            restoreTimer();
         }
 
         // ========== 获取当前手机本地时间字符串 ==========
@@ -2820,8 +2821,9 @@
         document.getElementById('quickFeedStartTime').addEventListener('change', calculateQuickFeedDuration);
         document.getElementById('quickFeedEndTime').addEventListener('change', calculateQuickFeedDuration);
 
-        // ========== 计时器功能（基于时间戳，熄屏不影响） ==========
+        // ========== 计时器功能（基于时间戳+localStorage，熄屏/杀进程不影响） ==========
         let timerStartTimestamp = null;
+        let timerLocalStartTime = null; // 本地时间字符串
 
         function startTimer() {
             document.getElementById('startBtn').disabled = true;
@@ -2829,12 +2831,15 @@
 
             // 记录开始时间戳和本地时间字符串
             timerStartTimestamp = Date.now();
-            timerStartTime = getNowLocal();
-            document.getElementById('feedStartTime').value = timerStartTime;
+            timerLocalStartTime = getNowLocal();
+            document.getElementById('feedStartTime').value = timerLocalStartTime;
             document.getElementById('feedEndTime').value = '';
             document.getElementById('feedDuration').value = '';
 
-            // 用 setInterval 仅用于刷新显示，不用于累计计时
+            // 持久化到 localStorage，防止页面被杀后丢失
+            localStorage.setItem('timerStartTimestamp', timerStartTimestamp);
+            localStorage.setItem('timerLocalStartTime', timerLocalStartTime);
+
             timerInterval = setInterval(() => {
                 timerSeconds = Math.floor((Date.now() - timerStartTimestamp) / 1000);
                 updateTimerDisplay();
@@ -2857,8 +2862,12 @@
             const minutes = Math.round(elapsedSeconds / 60);
             document.getElementById('feedDuration').value = minutes;
 
+            // 清除持久化数据
             timerSeconds = 0;
             timerStartTimestamp = null;
+            timerLocalStartTime = null;
+            localStorage.removeItem('timerStartTimestamp');
+            localStorage.removeItem('timerLocalStartTime');
             updateTimerDisplay();
         }
 
@@ -2869,6 +2878,30 @@
 
             document.getElementById('timerDisplay').textContent =
                 `${String(hours).padStart(2, '0')}:${String(minutes).padStart(2, '0')}:${String(seconds).padStart(2, '0')}`;
+        }
+
+        // 页面加载时恢复计时器状态（防止浏览器杀进程后丢失）
+        function restoreTimer() {
+            const savedTimestamp = localStorage.getItem('timerStartTimestamp');
+            const savedLocalTime = localStorage.getItem('timerLocalStartTime');
+            if (savedTimestamp && savedLocalTime) {
+                timerStartTimestamp = parseInt(savedTimestamp);
+                timerLocalStartTime = savedLocalTime;
+                timerSeconds = Math.floor((Date.now() - timerStartTimestamp) / 1000);
+                updateTimerDisplay();
+                // 恢复表单
+                document.getElementById('feedStartTime').value = timerLocalStartTime;
+                document.getElementById('feedEndTime').value = '';
+                document.getElementById('feedDuration').value = '';
+                // 恢复按钮状态
+                document.getElementById('startBtn').disabled = true;
+                document.getElementById('stopBtn').disabled = false;
+                // 重启定时器刷新显示
+                timerInterval = setInterval(() => {
+                    timerSeconds = Math.floor((Date.now() - timerStartTimestamp) / 1000);
+                    updateTimerDisplay();
+                }, 1000);
+            }
         }
 
         // ========== 工具函数 ==========
