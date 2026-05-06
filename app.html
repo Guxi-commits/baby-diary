@@ -2132,11 +2132,22 @@
         }
 
         function calculateAge(birthDate) {
-            const birth = new Date(birthDate);
+            // 手动解析日期，避免时区问题
+            const parts = birthDate.split('-');
+            const birthY = parseInt(parts[0]);
+            const birthM = parseInt(parts[1]) - 1;
+            const birthD = parseInt(parts[2]);
             const now = new Date();
-            const diffTime = Math.abs(now - birth);
-            const diffDays = Math.floor(diffTime / (1000 * 60 * 60 * 24));
+            const nowY = now.getFullYear();
+            const nowM = now.getMonth();
+            const nowD = now.getDate();
 
+            // 计算天数差：用本地日期精确计算
+            const birthDateObj = new Date(birthY, birthM, birthD);
+            const nowDateObj = new Date(nowY, nowM, nowD);
+            const diffDays = Math.round((nowDateObj - birthDateObj) / (1000 * 60 * 60 * 24));
+
+            if (diffDays < 0) return '未出生';
             if (diffDays < 30) {
                 return `${diffDays}天`;
             } else if (diffDays < 365) {
