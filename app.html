@@ -2393,18 +2393,15 @@
             const breastDuration = todayRecords.filter(r => r.type === 'breast').reduce((sum, r) => sum + (r.duration || 0), 0);
             document.getElementById('todayBreastDuration').textContent = breastDuration;
 
-            // 近7日平均奶粉量（从今天往前推7天，总量 / 7）
-            const sevenDaysAgoDate = new Date();
-            sevenDaysAgoDate.setDate(sevenDaysAgoDate.getDate() - 7);
-            const sevenDayStr = `${sevenDaysAgoDate.getFullYear()}-${pad2(sevenDaysAgoDate.getMonth()+1)}-${pad2(sevenDaysAgoDate.getDate())}`;
-            const recentFormulaRecords = records.filter(r => r.type === 'formula' && r.time && r.time.slice(0, 10) >= sevenDayStr);
-            // 按天汇总奶粉量
-            const dailyTotals = {};
-            recentFormulaRecords.forEach(r => {
-                const day = r.time.slice(0, 10);
-                dailyTotals[day] = (dailyTotals[day] || 0) + (r.amount || 0);
-            });
-            const totalFormula = Object.values(dailyTotals).reduce((sum, v) => sum + v, 0);
+            // 近7日平均奶粉量（今天+前6天，共7天，总量 / 7）
+            const recent7Days = [];
+            for (let i = 0; i < 7; i++) {
+                const d = new Date();
+                d.setDate(d.getDate() - i);
+                recent7Days.push(`${d.getFullYear()}-${pad2(d.getMonth()+1)}-${pad2(d.getDate())}`);
+            }
+            const recentFormulaRecords = records.filter(r => r.type === 'formula' && r.time && recent7Days.includes(r.time.slice(0, 10)));
+            const totalFormula = recentFormulaRecords.reduce((sum, r) => sum + (r.amount || 0), 0);
             const avgAmount = Math.round(totalFormula / 7);
             document.getElementById('avgFeedAmount').textContent = avgAmount;
 
