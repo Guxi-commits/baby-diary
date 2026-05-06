@@ -2393,7 +2393,7 @@
             const breastDuration = todayRecords.filter(r => r.type === 'breast').reduce((sum, r) => sum + (r.duration || 0), 0);
             document.getElementById('todayBreastDuration').textContent = breastDuration;
 
-            // 近7日平均奶粉量（每日总量的7日平均值）
+            // 近7日平均奶粉量（从今天往前推7天，总量 / 7）
             const sevenDaysAgoDate = new Date();
             sevenDaysAgoDate.setDate(sevenDaysAgoDate.getDate() - 7);
             const sevenDayStr = `${sevenDaysAgoDate.getFullYear()}-${pad2(sevenDaysAgoDate.getMonth()+1)}-${pad2(sevenDaysAgoDate.getDate())}`;
@@ -2404,9 +2404,8 @@
                 const day = r.time.slice(0, 10);
                 dailyTotals[day] = (dailyTotals[day] || 0) + (r.amount || 0);
             });
-            const days = Object.keys(dailyTotals);
-            const avgAmount = days.length > 0 ?
-                Math.round(days.reduce((sum, d) => sum + dailyTotals[d], 0) / days.length) : 0;
+            const totalFormula = Object.values(dailyTotals).reduce((sum, v) => sum + v, 0);
+            const avgAmount = Math.round(totalFormula / 7);
             document.getElementById('avgFeedAmount').textContent = avgAmount;
 
             const list = document.getElementById('feedingRecords');
