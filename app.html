@@ -2393,11 +2393,11 @@
             const breastDuration = todayRecords.filter(r => r.type === 'breast').reduce((sum, r) => sum + (r.duration || 0), 0);
             document.getElementById('todayBreastDuration').textContent = breastDuration;
 
-            // 近7日奶粉平均量
-            const sevenDaysAgo = new Date();
-            sevenDaysAgo.setDate(sevenDaysAgo.getDate() - 7);
-            const sevenDayStr = sevenDaysAgo.toISOString().slice(0, 10);
-            const recentFormulaRecords = records.filter(r => r.type === 'formula' && r.amount > 0 && r.time && r.time >= sevenDayStr);
+            // 近7日奶粉平均量（用本地时间计算日期）
+            const sevenDaysAgoDate = new Date();
+            sevenDaysAgoDate.setDate(sevenDaysAgoDate.getDate() - 7);
+            const sevenDayStr = `${sevenDaysAgoDate.getFullYear()}-${pad2(sevenDaysAgoDate.getMonth()+1)}-${pad2(sevenDaysAgoDate.getDate())}`;
+            const recentFormulaRecords = records.filter(r => r.type === 'formula' && r.amount > 0 && r.time && r.time.slice(0, 10) >= sevenDayStr);
             const avgAmount = recentFormulaRecords.length > 0 ?
                 Math.round(recentFormulaRecords.reduce((sum, r) => sum + r.amount, 0) / recentFormulaRecords.length) : 0;
             document.getElementById('avgFeedAmount').textContent = avgAmount;
