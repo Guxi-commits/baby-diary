@@ -1022,7 +1022,7 @@
             <div class="trend-cards">
                 <div class="trend-card">
                     <div class="trend-value" id="avgFeedAmount">0</div>
-                    <div class="trend-label">平均奶粉量(ml)</div>
+                    <div class="trend-label">近七日平均<br>奶粉量(ml)</div>
                 </div>
                 <div class="trend-card">
                     <div class="trend-value" id="feedFrequency">0</div>
@@ -2393,9 +2393,13 @@
             const breastDuration = todayRecords.filter(r => r.type === 'breast').reduce((sum, r) => sum + (r.duration || 0), 0);
             document.getElementById('todayBreastDuration').textContent = breastDuration;
 
-            const formulaRecords = records.filter(r => r.type === 'formula' && r.amount > 0);
-            const avgAmount = formulaRecords.length > 0 ?
-                Math.round(formulaRecords.reduce((sum, r) => sum + r.amount, 0) / formulaRecords.length) : 0;
+            // 近7日奶粉平均量
+            const sevenDaysAgo = new Date();
+            sevenDaysAgo.setDate(sevenDaysAgo.getDate() - 7);
+            const sevenDayStr = sevenDaysAgo.toISOString().slice(0, 10);
+            const recentFormulaRecords = records.filter(r => r.type === 'formula' && r.amount > 0 && r.time && r.time >= sevenDayStr);
+            const avgAmount = recentFormulaRecords.length > 0 ?
+                Math.round(recentFormulaRecords.reduce((sum, r) => sum + r.amount, 0) / recentFormulaRecords.length) : 0;
             document.getElementById('avgFeedAmount').textContent = avgAmount;
 
             const list = document.getElementById('feedingRecords');
