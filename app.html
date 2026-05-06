@@ -2142,10 +2142,10 @@
             const nowM = now.getMonth();
             const nowD = now.getDate();
 
-            // 计算天数差：用本地日期精确计算
+            // 计算天数差：用本地日期精确计算，出生当天算第1天
             const birthDateObj = new Date(birthY, birthM, birthD);
             const nowDateObj = new Date(nowY, nowM, nowD);
-            const diffDays = Math.round((nowDateObj - birthDateObj) / (1000 * 60 * 60 * 24));
+            const diffDays = Math.round((nowDateObj - birthDateObj) / (1000 * 60 * 60 * 24)) + 1;
 
             if (diffDays < 0) return '未出生';
             if (diffDays < 30) {
