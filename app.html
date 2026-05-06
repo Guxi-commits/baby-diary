@@ -904,6 +904,13 @@
                 </div>
             </div>
         </div>
+
+        <div class="card" style="background: linear-gradient(135deg, #FFF1F3, #FFE4E8); border: none;">
+            <div style="text-align: center; padding: 8px 0;">
+                <div style="font-size: 1.5rem; margin-bottom: 8px;">🌸</div>
+                <div id="dailyEncouragement" style="font-size: 0.95rem; color: #8B5E6B; line-height: 1.6; font-weight: 500;"></div>
+            </div>
+        </div>
     </section>
 
     <!-- 生长记录页面 -->
@@ -2634,6 +2641,49 @@
             `;
         }
 
+        // ========== 每日鼓励语 ==========
+        const encouragements = [
+            "你已经是最好的妈妈了，不要对自己太苛刻 💕",
+            "每一个不眠的夜晚，都是你对宝宝满满的爱 🌙",
+            "照顾好自己，才能更好地照顾宝宝 ☕",
+            "宝宝的健康成长，就是对你最好的回报 🌱",
+            "今天也辛苦了，你真的很了不起 ✨",
+            "慢慢来，一切都会越来越好的 🌈",
+            "你比想象中更坚强，也更温柔 🦋",
+            "累了就休息一下，没关系的 🍃",
+            "宝宝有你这样的妈妈，真幸福 🧸",
+            "每一天都是新的开始，今天也会很棒 ☀️",
+            "你的付出，宝宝都感受到了 💗",
+            "不求完美，尽力就好，你已经做得很棒了 🌻",
+            "产后恢复需要时间，对自己耐心一点 🌿",
+            "哭出来也没关系，释放情绪也是一种勇敢 💧",
+            "你不是一个人在战斗，家人都在身边 🤝",
+            "宝宝每一个微笑，都是因为你的陪伴 😊",
+            "今天喝杯热水，对自己好一点 🫖",
+            "睡不着的夜晚，想想宝宝可爱的模样 🌜",
+            "你已经熬过了最难的日子，接下来只会更好 🌅",
+            "做妈妈不需要完美，只需要真心 🌸",
+            "相信自己的直觉，你比任何育儿书都懂你的宝宝 📖",
+            "小小的人儿，因为有你在而安心成长 🍼",
+            "产后的每一天都在变好，请相信这个过程 🌊",
+            "你值得被照顾，不要忘了也爱自己 ❤️",
+            "宝宝长大后会知道，妈妈有多么不容易 🎀",
+            "今天完成了一件事就很棒，不必贪多 ⭐",
+            "养育孩子是马拉松，不是百米冲刺 🏃‍♀️",
+            "哪怕只睡了一小会儿，你也依然是超人妈妈 🦸‍♀️",
+            "每一滴母乳都是爱的精华，你已经给了最好的 🤱",
+            "这段日子很辛苦，但也会成为最珍贵的回忆 💫"
+        ];
+
+        function loadDailyEncouragement() {
+            // 根据日期生成索引，同一天显示同一句
+            const today = new Date();
+            const dayOfYear = Math.floor((today - new Date(today.getFullYear(), 0, 0)) / (1000 * 60 * 60 * 24));
+            const idx = dayOfYear % encouragements.length;
+            const el = document.getElementById('dailyEncouragement');
+            if (el) el.textContent = encouragements[idx];
+        }
+
         function loadOverviewData() {
             if (!currentBaby) return;
             const feedRecords = DataManager.getRecords(currentBaby.id, 'feeding');
@@ -2649,6 +2699,7 @@
             const minutes = totalMinutes % 60;
             document.getElementById('todayFeedDuration').textContent = hours > 0 ? `${hours}时${minutes}分` : `${minutes}分`;
             document.getElementById('todayDiaperCount').textContent = todayDiapers.length;
+            loadDailyEncouragement();
         }
 
         // ========== 图表更新（使用内联 drawChart） ==========
