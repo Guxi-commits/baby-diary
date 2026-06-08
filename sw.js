@@ -1,4 +1,4 @@
-const CACHE_NAME = 'baby-diary-v5';
+const CACHE_NAME = 'baby-diary-v6';
 
 self.addEventListener('install', event => {
   self.skipWaiting();
