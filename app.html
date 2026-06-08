@@ -800,6 +800,129 @@
         .chart-subtitle:first-of-type {
             margin-top: 0;
         }
+
+        /* AD打卡日历 */
+        .ad-calendar-nav {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 10px 0;
+            margin-bottom: 8px;
+        }
+        .ad-calendar-nav .nav-arrow {
+            width: 36px;
+            height: 36px;
+            border-radius: 50%;
+            border: none;
+            background: var(--bg);
+            font-size: 18px;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: var(--text);
+        }
+        .ad-calendar-nav .nav-arrow:active {
+            background: var(--primary);
+            color: white;
+        }
+        .ad-calendar-nav .month-label {
+            font-size: 1.05rem;
+            font-weight: 600;
+            color: var(--text);
+        }
+        .ad-calendar-weekdays {
+            display: grid;
+            grid-template-columns: repeat(7, 1fr);
+            text-align: center;
+            font-size: 0.8rem;
+            color: var(--text-light);
+            margin-bottom: 6px;
+            font-weight: 500;
+        }
+        .ad-calendar-grid {
+            display: grid;
+            grid-template-columns: repeat(7, 1fr);
+            gap: 4px;
+        }
+        .ad-day {
+            aspect-ratio: 1;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            border-radius: 10px;
+            font-size: 0.9rem;
+            cursor: pointer;
+            position: relative;
+            transition: all 0.15s;
+            user-select: none;
+            -webkit-user-select: none;
+        }
+        .ad-day.empty {
+            cursor: default;
+        }
+        .ad-day.future {
+            color: #ddd;
+            cursor: default;
+        }
+        .ad-day.past {
+            color: var(--text);
+        }
+        .ad-day.today {
+            border: 2px solid var(--primary);
+            font-weight: 700;
+            color: var(--primary);
+        }
+        .ad-day.checked {
+            background: var(--success);
+            color: white;
+            font-weight: 600;
+        }
+        .ad-day.checked.today {
+            border: 2px solid var(--primary);
+            background: var(--success);
+            color: white;
+        }
+        .ad-day:not(.empty):not(.future):active {
+            transform: scale(0.92);
+        }
+        .ad-day .check-mark {
+            font-size: 0.65rem;
+            line-height: 1;
+            margin-top: 1px;
+        }
+        .ad-stats {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 12px;
+            margin-bottom: 15px;
+        }
+        .ad-stat-item {
+            background: var(--bg);
+            border-radius: 12px;
+            padding: 14px;
+            text-align: center;
+        }
+        .ad-stat-item .stat-value {
+            font-size: 1.5rem;
+            font-weight: 700;
+            color: var(--primary);
+        }
+        .ad-stat-item .stat-label {
+            font-size: 0.8rem;
+            color: var(--text-light);
+            margin-top: 4px;
+        }
+        .ad-hint {
+            text-align: center;
+            font-size: 0.8rem;
+            color: var(--text-light);
+            margin-top: 12px;
+            padding: 8px;
+            background: var(--bg);
+            border-radius: 8px;
+        }
     </style>
 </head>
 <body>
@@ -848,6 +971,7 @@
         <button class="nav-tab" data-tab="diaper">大小便</button>
         <button class="nav-tab" data-tab="jaundice">黄疸</button>
         <button class="nav-tab" data-tab="vaccine">疫苗</button>
+        <button class="nav-tab" data-tab="ad">AD</button>
     </div>
 
     <!-- 总览页面 -->
@@ -1202,6 +1326,42 @@
         </div>
     </section>
 
+    <!-- AD打卡页面 -->
+    <section class="content-section" id="ad">
+        <div class="card">
+            <div class="card-title">
+                <span class="icon" style="background: rgba(81,207,102,0.2);">💊</span>
+                AD打卡
+            </div>
+            <div class="ad-stats">
+                <div class="ad-stat-item">
+                    <div class="stat-value" id="adStreak">0</div>
+                    <div class="stat-label">连续打卡(天)</div>
+                </div>
+                <div class="ad-stat-item">
+                    <div class="stat-value" id="adMonthCount">0</div>
+                    <div class="stat-label">本月打卡(天)</div>
+                </div>
+            </div>
+        </div>
+        <div class="card">
+            <div class="card-title">
+                <span class="icon" style="background: rgba(255,154,162,0.2);">📅</span>
+                打卡日历
+            </div>
+            <div class="ad-calendar-nav">
+                <button class="nav-arrow" onclick="adPrevMonth()">◀</button>
+                <span class="month-label" id="adMonthLabel"></span>
+                <button class="nav-arrow" onclick="adNextMonth()">▶</button>
+            </div>
+            <div class="ad-calendar-weekdays">
+                <span>一</span><span>二</span><span>三</span><span>四</span><span>五</span><span>六</span><span>日</span>
+            </div>
+            <div class="ad-calendar-grid" id="adCalendarGrid"></div>
+            <div class="ad-hint">💡 点击日期即可打卡/取消打卡，支持补卡</div>
+        </div>
+    </section>
+
     <!-- 底部导航 -->
     <nav class="bottom-nav">
         <div class="nav-item active" data-section="overview">
@@ -1223,6 +1383,10 @@
         <div class="nav-item" data-section="vaccine">
             <span class="icon">💉</span>
             <span>疫苗</span>
+        </div>
+        <div class="nav-item" data-section="ad">
+            <span class="icon">💊</span>
+            <span>AD</span>
         </div>
     </nav>
 
@@ -1856,6 +2020,12 @@
                 const records = this.getVaccineRecords(babyId);
                 records[vaccineId] = date;
                 localStorage.setItem(`vaccines_${babyId}`, JSON.stringify(records));
+            },
+            getAdRecords(babyId) {
+                return JSON.parse(localStorage.getItem(`ad_${babyId}`) || '[]');
+            },
+            saveAdRecords(babyId, dates) {
+                localStorage.setItem(`ad_${babyId}`, JSON.stringify(dates));
             }
         };
 
@@ -2019,7 +2189,7 @@
             for (let i = 0; i < localStorage.length; i++) {
                 const key = localStorage.key(i);
                 if (key === 'babies' || key === 'currentBaby' || key === 'pageScale' ||
-                    key.startsWith('records_') || key.startsWith('vaccines_')) {
+                    key.startsWith('records_') || key.startsWith('vaccines_') || key.startsWith('ad_')) {
                     exportObj[key] = localStorage.getItem(key);
                 }
             }
@@ -2364,6 +2534,7 @@
             loadJaundiceData();
             loadVaccineData();
             loadOverviewData();
+            loadAdData();
         }
 
         function loadGrowthData() {
@@ -2650,6 +2821,132 @@
                     </span>
                 </div>
             `;
+        }
+
+        // ========== AD打卡 ==========
+        let adCalendarYear, adCalendarMonth;
+
+        function loadAdData() {
+            if (!currentBaby) return;
+            // 初始化日历为当前月
+            const now = new Date();
+            if (adCalendarYear === undefined) {
+                adCalendarYear = now.getFullYear();
+                adCalendarMonth = now.getMonth();
+            }
+            renderAdCalendar();
+            updateAdStats();
+        }
+
+        function adPrevMonth() {
+            adCalendarMonth--;
+            if (adCalendarMonth < 0) { adCalendarMonth = 11; adCalendarYear--; }
+            renderAdCalendar();
+        }
+
+        function adNextMonth() {
+            adCalendarMonth++;
+            if (adCalendarMonth > 11) { adCalendarMonth = 0; adCalendarYear++; }
+            renderAdCalendar();
+        }
+
+        function renderAdCalendar() {
+            const checkedDates = currentBaby ? DataManager.getAdRecords(currentBaby.id) : [];
+            const checkedSet = new Set(checkedDates);
+
+            const now = new Date();
+            const todayStr = `${now.getFullYear()}-${pad2(now.getMonth()+1)}-${pad2(now.getDate())}`;
+
+            // 月份标题
+            document.getElementById('adMonthLabel').textContent = `${adCalendarYear}年${adCalendarMonth + 1}月`;
+
+            // 计算日历网格
+            const firstDay = new Date(adCalendarYear, adCalendarMonth, 1);
+            let startWeekday = firstDay.getDay(); // 0=周日
+            if (startWeekday === 0) startWeekday = 7; // 转为周一=1
+            startWeekday -= 1; // 偏移量：第1天前面空几个格子
+
+            const daysInMonth = new Date(adCalendarYear, adCalendarMonth + 1, 0).getDate();
+
+            const grid = document.getElementById('adCalendarGrid');
+            grid.innerHTML = '';
+
+            // 空白格
+            for (let i = 0; i < startWeekday; i++) {
+                const div = document.createElement('div');
+                div.className = 'ad-day empty';
+                grid.appendChild(div);
+            }
+
+            // 日期格
+            for (let d = 1; d <= daysInMonth; d++) {
+                const dateStr = `${adCalendarYear}-${pad2(adCalendarMonth + 1)}-${pad2(d)}`;
+                const div = document.createElement('div');
+                div.className = 'ad-day';
+
+                const isFuture = dateStr > todayStr;
+                const isToday = dateStr === todayStr;
+                const isChecked = checkedSet.has(dateStr);
+
+                if (isFuture) div.classList.add('future');
+                else div.classList.add('past');
+                if (isToday) div.classList.add('today');
+                if (isChecked) div.classList.add('checked');
+
+                div.innerHTML = `${d}${isChecked ? '<span class="check-mark">✓</span>' : ''}`;
+
+                if (!isFuture) {
+                    div.onclick = function() { toggleAdCheck(dateStr); };
+                }
+
+                grid.appendChild(div);
+            }
+        }
+
+        function toggleAdCheck(dateStr) {
+            if (!currentBaby) return;
+            const dates = DataManager.getAdRecords(currentBaby.id);
+            const idx = dates.indexOf(dateStr);
+            if (idx >= 0) {
+                dates.splice(idx, 1);
+            } else {
+                dates.push(dateStr);
+            }
+            dates.sort();
+            DataManager.saveAdRecords(currentBaby.id, dates);
+            renderAdCalendar();
+            updateAdStats();
+        }
+
+        function updateAdStats() {
+            if (!currentBaby) return;
+            const dates = DataManager.getAdRecords(currentBaby.id);
+            const now = new Date();
+            const todayStr = `${now.getFullYear()}-${pad2(now.getMonth()+1)}-${pad2(now.getDate())}`;
+
+            // 连续打卡天数：从今天往前数
+            let streak = 0;
+            let checkDate = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+            // 如果今天没打卡，从昨天开始算
+            const todayKey = `${checkDate.getFullYear()}-${pad2(checkDate.getMonth()+1)}-${pad2(checkDate.getDate())}`;
+            if (!dates.includes(todayKey)) {
+                checkDate.setDate(checkDate.getDate() - 1);
+            }
+            while (true) {
+                const key = `${checkDate.getFullYear()}-${pad2(checkDate.getMonth()+1)}-${pad2(checkDate.getDate())}`;
+                if (dates.includes(key)) {
+                    streak++;
+                    checkDate.setDate(checkDate.getDate() - 1);
+                } else {
+                    break;
+                }
+            }
+            document.getElementById('adStreak').textContent = streak;
+
+            // 本月打卡天数
+            const monthPrefix = `${now.getFullYear()}-${pad2(now.getMonth()+1)}-`;
+            const monthCount = dates.filter(d => d.startsWith(monthPrefix)).length;
+            document.getElementById('adMonthCount').textContent = monthCount;
         }
 
         // ========== 每日鼓励语 ==========
@@ -3110,6 +3407,7 @@
                 else if (section === 'feeding') loadFeedingData();
                 else if (section === 'diaper') loadDiaperData();
                 else if (section === 'jaundice') loadJaundiceData();
+                else if (section === 'ad') loadAdData();
             }, 50);
         }
 
