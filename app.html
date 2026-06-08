@@ -923,6 +923,54 @@
             background: var(--bg);
             border-radius: 8px;
         }
+
+        /* 趋势图点击删除弹层 */
+        .chart-detail-popup {
+            position: absolute;
+            background: white;
+            border-radius: 12px;
+            box-shadow: 0 4px 20px rgba(0,0,0,0.15);
+            padding: 12px;
+            z-index: 20;
+            min-width: 200px;
+            max-width: 280px;
+            display: none;
+        }
+        .chart-detail-popup.show { display: block; }
+        .chart-detail-popup .popup-title {
+            font-weight: 600;
+            font-size: 0.9rem;
+            margin-bottom: 8px;
+            padding-bottom: 6px;
+            border-bottom: 1px solid #eee;
+        }
+        .chart-detail-popup .popup-item {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 6px 0;
+            font-size: 0.85rem;
+        }
+        .chart-detail-popup .popup-item .item-info {
+            flex: 1;
+        }
+        .chart-detail-popup .popup-item .del-btn {
+            background: none;
+            border: none;
+            font-size: 16px;
+            cursor: pointer;
+            padding: 2px 6px;
+            border-radius: 6px;
+        }
+        .chart-detail-popup .popup-item .del-btn:active {
+            background: #ffe0e0;
+        }
+        .chart-detail-popup .popup-empty {
+            font-size: 0.85rem;
+            color: var(--text-light);
+            text-align: center;
+            padding: 8px 0;
+        }
     </style>
 </head>
 <body>
@@ -1907,7 +1955,8 @@
             var chartMeta = {
                 padLeft: padLeft, padTop: padTop, chartW: chartW, chartH: chartH,
                 n: n, labels: labels, datasets: datasets, type: type,
-                minVal: minVal, maxVal: maxVal, w: w, h: h, dpr: dpr
+                minVal: minVal, maxVal: maxVal, w: w, h: h, dpr: dpr,
+                onDelete: options.onDelete || null
             };
             canvas._chartMeta = chartMeta;
 
@@ -1922,12 +1971,19 @@
                     canvas.parentElement.appendChild(tooltip);
                 }
 
-                function showChartTooltip(clientX, clientY) {
+                // 删除弹层
+                var popup = canvas.parentElement.querySelector('.chart-detail-popup');
+                if (!popup) {
+                    popup = document.createElement('div');
+                    popup.className = 'chart-detail-popup';
+                    canvas.parentElement.appendChild(popup);
+                }
+
+                function getHitIndex(clientX) {
                     var meta = canvas._chartMeta;
-                    if (!meta) return;
+                    if (!meta) return -1;
                     var rect = canvas.getBoundingClientRect();
                     var mx = (clientX - rect.left) * (meta.w / rect.width);
-
                     var hitIdx = -1;
                     var minDist = Infinity;
                     for (var i = 0; i < meta.n; i++) {
@@ -1935,8 +1991,15 @@
                         var dist = Math.abs(mx - px);
                         if (dist < minDist) { minDist = dist; hitIdx = i; }
                     }
+                    if (hitIdx < 0 || minDist > meta.chartW / Math.max(meta.n, 1) + 15) return -1;
+                    return hitIdx;
+                }
 
-                    if (hitIdx < 0 || minDist > meta.chartW / Math.max(meta.n, 1) + 15) {
+                function showChartTooltip(clientX, clientY) {
+                    var meta = canvas._chartMeta;
+                    if (!meta) return;
+                    var hitIdx = getHitIndex(clientX);
+                    if (hitIdx < 0) {
                         tooltip.style.opacity = '0';
                         return;
                     }
@@ -1946,9 +2009,13 @@
                         var val = ds.data[hitIdx];
                         html += '<div>' + ds.label + ': ' + (val != null ? val : '-') + '</div>';
                     });
+                    if (meta.onDelete) {
+                        html += '<div style="margin-top:4px;font-size:11px;opacity:0.7;">点击查看详情/删除</div>';
+                    }
                     tooltip.innerHTML = html;
                     tooltip.style.opacity = '1';
 
+                    var rect = canvas.getBoundingClientRect();
                     var tipW = tooltip.offsetWidth;
                     var tipH = tooltip.offsetHeight;
                     var tipX = clientX - rect.left + 12;
@@ -1964,14 +2031,37 @@
                     if (t) t.style.opacity = '0';
                 }
 
+                function showChartPopup(clientX, clientY) {
+                    var meta = canvas._chartMeta;
+                    if (!meta || !meta.onDelete) return;
+                    var hitIdx = getHitIndex(clientX);
+                    if (hitIdx < 0) return;
+                    hideChartTooltip();
+                    meta.onDelete(hitIdx, clientX, clientY, popup);
+                }
+
                 canvas.addEventListener('mousemove', function(e) { showChartTooltip(e.clientX, e.clientY); });
                 canvas.addEventListener('mouseleave', hideChartTooltip);
+                canvas.addEventListener('click', function(e) { showChartPopup(e.clientX, e.clientY); });
                 canvas.addEventListener('touchmove', function(e) {
                     e.preventDefault();
                     var touch = e.touches[0];
                     showChartTooltip(touch.clientX, touch.clientY);
                 }, { passive: false });
                 canvas.addEventListener('touchend', hideChartTooltip);
+                // 手机端 tap 支持
+                var _touchStartX = 0, _touchStartY = 0, _touchStartTime = 0;
+                canvas.addEventListener('touchstart', function(e) {
+                    var t = e.touches[0];
+                    _touchStartX = t.clientX;
+                    _touchStartY = t.clientY;
+                    _touchStartTime = Date.now();
+                }, { passive: true });
+                canvas.addEventListener('touchend', function(e) {
+                    if (Date.now() - _touchStartTime < 300) {
+                        showChartPopup(_touchStartX, _touchStartY);
+                    }
+                });
             }
         }
 
@@ -2093,6 +2183,13 @@
 
             resetAllDateTimes();
             restoreTimer();
+
+            // 点击空白处关闭趋势图弹层
+            document.addEventListener('click', function(e) {
+                if (!e.target.closest('.chart-detail-popup') && !e.target.closest('canvas')) {
+                    document.querySelectorAll('.chart-detail-popup').forEach(p => p.classList.remove('show'));
+                }
+            });
         }
 
         // ========== 获取当前手机本地时间字符串 ==========
@@ -2569,9 +2666,10 @@
             const today = getTodayLocal();
             const todayRecords = records.filter(r => r.time && r.time.startsWith(today));
 
-            document.getElementById('todayFeeds').textContent = todayRecords.length;
-            document.getElementById('todayFeedCount').textContent = todayRecords.length;
-            document.getElementById('feedFrequency').textContent = todayRecords.length;
+            const mergedCount = countMergedFeedingSessions(todayRecords);
+            document.getElementById('todayFeeds').textContent = mergedCount;
+            document.getElementById('todayFeedCount').textContent = mergedCount;
+            document.getElementById('feedFrequency').textContent = mergedCount;
 
             const totalDuration = todayRecords.reduce((sum, r) => sum + (r.duration || 0), 0);
             const hours = Math.floor(totalDuration / 60);
@@ -3000,8 +3098,9 @@
             const todayFeeds = feedRecords.filter(r => r.time && r.time.startsWith(today));
             const todayDiapers = diaperRecords.filter(r => r.time && r.time.startsWith(today));
 
-            document.getElementById('todayFeedCount').textContent = todayFeeds.length;
-            document.getElementById('todayFeeds').textContent = todayFeeds.length;
+            const mergedCount = countMergedFeedingSessions(todayFeeds);
+            document.getElementById('todayFeedCount').textContent = mergedCount;
+            document.getElementById('todayFeeds').textContent = mergedCount;
             const totalMinutes = Math.round(todayFeeds.reduce((s, r) => s + (r.duration || 0), 0));
             const hours = Math.floor(totalMinutes / 60);
             const minutes = totalMinutes % 60;
@@ -3133,7 +3232,45 @@
                 data: dates.map(d => dailyData[d].poop),
                 color: '#FFDAC1',
                 label: '大便'
-            }], { yTitle: '次', stepSize: 1 });
+            }], {
+                yTitle: '次', stepSize: 1,
+                onDelete: function(hitIdx, clientX, clientY, popup) {
+                    var dateStr = dates[hitIdx];
+                    if (!dateStr) return;
+                    var dayRecords = records.filter(r => r.time && r.time.slice(0, 10) === dateStr);
+                    var html = '<div class="popup-title">' + formatDate(dateStr) + ' 的记录</div>';
+                    if (dayRecords.length === 0) {
+                        html += '<div class="popup-empty">暂无记录</div>';
+                    } else {
+                        dayRecords.forEach(function(r) {
+                            var typeLabel = r.type === 'pee' ? '💧小便' : r.type === 'poop' ? '💩大便' : '💧💩都有';
+                            html += '<div class="popup-item"><span class="item-info">' + typeLabel + '</span><button class="del-btn" onclick="deleteRecordFromChart(\'diaper\',' + r.id + ')">🗑️</button></div>';
+                        });
+                    }
+                    popup.innerHTML = html;
+                    popup.classList.add('show');
+                    // 定位弹层
+                    var rect = diaperCanvas.getBoundingClientRect();
+                    var parentRect = diaperCanvas.parentElement.getBoundingClientRect();
+                    var px = clientX - parentRect.left + 8;
+                    var py = clientY - parentRect.top - 10;
+                    if (px + 250 > parentRect.width) px = clientX - parentRect.left - 260;
+                    if (py < 0) py = 10;
+                    popup.style.left = px + 'px';
+                    popup.style.top = py + 'px';
+                }
+            });
+        }
+
+        // 趋势图弹层删除记录
+        function deleteRecordFromChart(type, recordId) {
+            if (!currentBaby) return;
+            if (confirm('确定要删除这条记录吗？')) {
+                DataManager.deleteRecord(currentBaby.id, type, recordId);
+                // 关闭弹层
+                document.querySelectorAll('.chart-detail-popup').forEach(p => p.classList.remove('show'));
+                loadAllData();
+            }
         }
 
         function updateJaundiceChart(records) {
@@ -3337,6 +3474,30 @@
             loadOverviewData();
         }
 
+        // ========== 母乳喂养合并计算次数 ==========
+        // 多次母乳记录开始时间间隔 < 1小时，算作1次
+        function countMergedFeedingSessions(records) {
+            if (!records || records.length === 0) return 0;
+            // 分离母乳和奶粉记录
+            const breastRecords = records.filter(r => r.type === 'breast' && r.time)
+                .sort((a, b) => a.time.localeCompare(b.time));
+            const formulaCount = records.filter(r => r.type === 'formula').length;
+
+            if (breastRecords.length === 0) return formulaCount;
+
+            let breastSessions = 1; // 至少1次
+            for (let i = 1; i < breastRecords.length; i++) {
+                const prev = new Date(breastRecords[i - 1].time);
+                const curr = new Date(breastRecords[i].time);
+                const diffMs = curr - prev;
+                // 间隔 >= 1小时算新的一次
+                if (diffMs >= 60 * 60 * 1000) {
+                    breastSessions++;
+                }
+            }
+            return breastSessions + formulaCount;
+        }
+
         function deleteRecord(type, id) {
             if (confirm('确定要删除这条记录吗？')) {
                 DataManager.deleteRecord(currentBaby.id, type, id);
@@ -3399,6 +3560,7 @@
         }
 
         function switchSection(section) {
+            document.querySelectorAll('.chart-detail-popup').forEach(p => p.classList.remove('show'));
             document.querySelectorAll('.content-section').forEach(s => s.classList.remove('active'));
             document.getElementById(section).classList.add('active');
             // 切换页面时重新绘制图表（解决 canvas 在隐藏状态下尺寸为0的问题）
